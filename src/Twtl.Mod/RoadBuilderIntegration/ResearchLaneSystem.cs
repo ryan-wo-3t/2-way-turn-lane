@@ -1,10 +1,10 @@
 using System;
+using System.Linq;
 using Game;
 using Game.Prefabs;
 using RoadBuilder.Domain.Components.Prefabs;
 using RoadBuilder.Domain.Enums;
 using RoadBuilder.Systems;
-using RoadBuilder.Utilities;
 
 namespace Twtl.Mod.RoadBuilderIntegration
 {
@@ -22,9 +22,11 @@ namespace Twtl.Mod.RoadBuilderIntegration
                 !roadBuilder.NetSections.TryGetValue("RB Empty Section 3", out var source)) return;
             try
             {
-                // Verify recursively using Road Builder's own public helper. Refuse a changed upstream template.
-                if (source.FindLanes<Game.Prefabs.CarLane>().Count != 0 || source.FindLanes<TrackLane>().Count != 0)
-                    throw new InvalidOperationException("Empty template contains drivable lanes; research registration refused.");
+                // FindLanes<T> ignores conditional pieces and does not traverse subsections.
+                // Check every piece, including conditional variants, and reject subsections.
+                if (source.m_SubSections.Length != 0 || source.m_Pieces.Length == 0 ||
+                    source.m_Pieces.Any(piece => piece.m_Piece == null || piece.m_Piece.TryGet<NetPieceLanes>(out _)))
+                    throw new InvalidOperationException("Empty template has lane-bearing pieces, subsections or incomplete geometry; registration refused.");
                 var section = source.Clone(PrefabName) as NetSectionPrefab
                     ?? throw new InvalidOperationException("Cannot clone empty net section");
                 // A cloned RB empty variant must not remain linked to its original group.

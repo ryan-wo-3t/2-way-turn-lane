@@ -173,7 +173,7 @@ internal static class Program
             Assert(Manager().AdmitBatch(new[] { Request(1), Request(1, 150, 180) }, 0).All(x => !x.Granted)));
         Test("expired held requests cleaned, occupied reservations retained and closed", () =>
         {
-            var manager = Manager(); Assert(Grant(manager, Request(1))); Assert(manager.ConfirmEntered(1));
+            var manager = Manager(); Assert(Grant(manager, Request(1))); Assert(manager.ConfirmEntered(1, 0));
             manager.Reconcile(30, _ => true, _ => true);
             Assert(manager.Snapshot(1).Single().State == ReservationState.Recovering);
             Assert(!Grant(manager, Request(2, 180, 150, Direction.Backward, clear: 50), 30));
@@ -182,7 +182,7 @@ internal static class Program
         });
         Test("route cancellation never clears occupied space", () =>
         {
-            var manager = Manager(); Grant(manager, Request(1)); manager.ConfirmEntered(1); manager.Cancel(1);
+            var manager = Manager(); Grant(manager, Request(1)); manager.ConfirmEntered(1, 0); manager.Cancel(1);
             Assert(manager.Snapshot(1).Count == 1); Assert(manager.ConfirmCleared(1));
             Assert(!Grant(manager, Request(2))); // explicit revalidation is required to reopen
             manager.Register(1, 2, new Interval(0, 500), Verified, true);
@@ -190,7 +190,7 @@ internal static class Program
         });
         Test("despawn, deletion, invalidation and reset cleanup", () =>
         {
-            var manager = Manager(); Grant(manager, Request(1)); manager.ConfirmEntered(1);
+            var manager = Manager(); Grant(manager, Request(1)); manager.ConfirmEntered(1, 0);
             manager.Reconcile(1, _ => false, _ => true); Assert(manager.Snapshot(1).Count == 0);
             Grant(manager, Request(2), 1); manager.Invalidate(1); Assert(manager.Snapshot(1).Count == 0);
             Assert(!Grant(manager, Request(3), 1)); manager.RoadDeleted(1);
@@ -202,6 +202,19 @@ internal static class Program
             Throws<InvalidOperationException>(() => manager.Register(1, 2, new Interval(0, 500), Verified, true));
             manager.Reconcile(2, _ => true, _ => true);
             Throws<ArgumentException>(() => manager.Reconcile(1, _ => true, _ => true));
+        });
+        Test("expired holds cannot enter even before the next reconciliation", () =>
+        {
+            var manager = Manager(); Grant(manager, Request(1));
+            Assert(!manager.ConfirmEntered(1, 20)); Assert(manager.Snapshot(1).Count == 0);
+        });
+        Test("occupied hold invalidation retains space until actual clearance", () =>
+        {
+            var manager = Manager(); Grant(manager, Request(1)); manager.ConfirmEntered(1, 0);
+            manager.Invalidate(1);
+            Assert(manager.Snapshot(1).Single().State == ReservationState.Recovering);
+            Assert(!Grant(manager, Request(2, 180, 150, Direction.Backward)));
+            manager.RoadDeleted(1); Assert(manager.Snapshot(1).Count == 0);
         });
         Test("randomized accepted intervals never overlap", () =>
         {

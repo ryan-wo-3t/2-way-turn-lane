@@ -133,9 +133,11 @@ namespace Twtl.Core
             return result.AsReadOnly();
         }
 
-        public bool ConfirmEntered(long vehicle)
+        public bool ConfirmEntered(long vehicle, double now)
         {
+            Advance(now);
             if (!vehicles.TryGetValue(vehicle, out var reservation) || reservation.State != ReservationState.Held) return false;
+            if (reservation.Request.ExpectedClearance <= now) { Remove(reservation); return false; }
             var road = corridors[reservation.Request.Corridor];
             if (!road.Open) return false;
             reservation.State = ReservationState.Occupied; return true;
