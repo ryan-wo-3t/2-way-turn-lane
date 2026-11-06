@@ -46,7 +46,7 @@ Inspect official postprocessor/deployment output. Stage the resulting `TwoWayTur
 2. Preserve the `TwoWayTurnLane` mod log. `[API]` lists the observed Game.dll version/MVID and signatures. Capture the main-menu display version independently.
 3. Enable **Expose closed research corridor**. In Road Builder, find **TWTL Research Corridor CLOSED 3m**. If it never appears, inspect prefab timing/discovery; do not insert it into private dictionaries as a blind workaround.
 4. Place a compatible test road with the research section. Verify the section contributes **zero** vehicle lanes and no through paths. This is the expected safe closed behaviour, not a functional TWLTL acceptance result.
-5. Select the segment, then enable **Capture selected road once**. The flag resets and logs lane IDs with generations, curves, car lane data, native reservation data, overlap entries and lane objects, with truncation counts and capture time.
+5. Select the segment, then enable **Capture selected road once**. The flag resets and logs lane IDs with generations, curves, car lane data, native reservation data, overlap entries and lane objects, with truncation counts, simulation frame and capture time. Up to 32 lane objects also include available native car navigation/current-lane/motion/transform data; these observations do not classify route intent automatically.
 6. Test upgrade, deletion, reload and disabling in copies of the disposable save. Record road reconstruction differences; do not assume removal is harmless.
 
 Continue with the bidirectional experiment protocol in [TEST_PLAN.md](TEST_PLAN.md). Do not alter a real city or expose a drivable two-way corridor before native braking, route restrictions and entry control are proven.

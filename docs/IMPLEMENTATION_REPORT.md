@@ -32,7 +32,7 @@ All files except LICENSE are new relative to the original base.
 
 Initial implementation commit: `4c4642a61859e5a992b4831059496d895f6d8988`. Its [PR CI run](https://github.com/ryan-wo-3t/2-way-turn-lane/actions/runs/42213687763), job `127878296919`, built successfully with SDK 8.0.427, **0 warnings / 0 errors**, and reported **30 passed / 0 failed**. The offline model granted two disjoint opposing movements and rejected the conflicting third.
 
-Subsequent changes add explicit entry-time hold-expiry checking and two regression cases, for **32 total test cases**, plus the documentation. Final revision and CI results are recorded in the PR and the final delivery message; do not assume the initial run proves later changes.
+Core verification commit: `390cba4319ca8834e6f511b87488d05d6406bf17`. Its [CI run](https://github.com/ryan-wo-3t/2-way-turn-lane/actions/runs/42214789890), job `127881991015`, built with **0 warnings / 0 errors** and reported **32 passed / 0 failed**, including the added entry-expiry and occupied-invalidation regressions. The offline experiment also passed. Later changes expand the uncompiled, read-only game inspector and record this evidence; the core and tests are unchanged from that verified revision. Final branch head is available in PR #1.
 
 Commands executed by that CI job:
 
@@ -78,7 +78,7 @@ Confirmed Road Builder source surfaces include lane-info/group metadata, options
 
 All 43 in-game acceptance scenarios in TEST_PLAN.md are NOT RUN. This includes routing in both directions/handedness, actual opposing braking/body separation, tram conflict handling, geometry regeneration, junction signals, load/disable/uninstall and large-city overhead. No complete mod compatibility claim, uninstall-safety claim, verified engine limitation or production-readiness claim is made.
 
-The first model run measured 4.838 ms for a three-request cold batch including first-call JIT on its GitHub runner. This is not a warmed benchmark, controller budget or game overhead. No simulation performance measurements exist. Diagnostics measure their own capture duration only when used locally.
+The first model run measured 4.838 ms and the 32-test revision measured 5.434 ms for a three-request cold batch including first-call JIT on their GitHub runners. This is not a warmed benchmark, controller budget or game overhead. No simulation performance measurements exist. Diagnostics measure their own capture duration only when used locally.
 
 ## Exact next steps and independent review priorities
 

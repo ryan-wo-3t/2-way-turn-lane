@@ -5,6 +5,7 @@ using System.Reflection;
 using Game;
 using Game.City;
 using Game.Net;
+using Game.Simulation;
 using Game.UI.InGame;
 using Unity.Entities;
 
@@ -25,7 +26,8 @@ namespace Twtl.Mod.Diagnostics
                 if (selected == Entity.Null || !EntityManager.Exists(selected) || !EntityManager.HasBuffer<SubLane>(selected))
                 { Mod.Log.Warn("[CAPTURE] Select a road segment with SubLane data first."); return; }
                 bool leftHand = World.GetOrCreateSystemManaged<CityConfigurationSystem>().leftHandTraffic;
-                Mod.Log.Info($"[CAPTURE] owner={selected} leftHandTraffic={leftHand}");
+                uint frame = World.GetOrCreateSystemManaged<SimulationSystem>().frameIndex;
+                Mod.Log.Info($"[CAPTURE] owner={selected} frame={frame} leftHandTraffic={leftHand}");
                 // EntityManager read APIs complete conflicting tracked jobs before accessing buffers.
                 // Captures may stall simulation and are never performed continuously.
                 var lanes = EntityManager.GetBuffer<SubLane>(selected, true);
@@ -34,6 +36,7 @@ namespace Twtl.Mod.Diagnostics
                 var identities = new Entity[count];
                 for (int i = 0; i < count; i++) identities[i] = lanes[i].m_SubLane;
                 Mod.Log.Info($"[CAPTURE] lanes={lanes.Length} captured={count}");
+                int vehicleBudget = 32;
                 foreach (Entity lane in identities)
                 {
                     if (!EntityManager.Exists(lane)) { Mod.Log.Warn("[CAPTURE] stale lane=" + lane); continue; }
@@ -54,7 +57,24 @@ namespace Twtl.Mod.Diagnostics
                     {
                         var occupants = EntityManager.GetBuffer<LaneObject>(lane, true);
                         Mod.Log.Info("[LANE] objectCount=" + occupants.Length);
-                        for (int i = 0; i < Math.Min(occupants.Length, 64); i++) Dump("laneObject", occupants[i]);
+                        var objects = new LaneObject[Math.Min(occupants.Length, 64)];
+                        for (int i = 0; i < objects.Length; i++) objects[i] = occupants[i];
+                        foreach (var item in objects)
+                        {
+                            Dump("laneObject", item);
+                            Entity vehicle = item.m_LaneObject;
+                            if (vehicleBudget <= 0 || !EntityManager.Exists(vehicle)) continue;
+                            vehicleBudget--;
+                            Mod.Log.Info("[VEHICLE] " + vehicle);
+                            if (EntityManager.HasComponent<Game.Vehicles.CarNavigation>(vehicle))
+                                Dump("carNavigation", EntityManager.GetComponentData<Game.Vehicles.CarNavigation>(vehicle));
+                            if (EntityManager.HasComponent<Game.Vehicles.CarCurrentLane>(vehicle))
+                                Dump("carCurrentLane", EntityManager.GetComponentData<Game.Vehicles.CarCurrentLane>(vehicle));
+                            if (EntityManager.HasComponent<Game.Objects.Moving>(vehicle))
+                                Dump("moving", EntityManager.GetComponentData<Game.Objects.Moving>(vehicle));
+                            if (EntityManager.HasComponent<Game.Objects.Transform>(vehicle))
+                                Dump("transform", EntityManager.GetComponentData<Game.Objects.Transform>(vehicle));
+                        }
                     }
                 }
             }
@@ -65,8 +85,19 @@ namespace Twtl.Mod.Diagnostics
         private static void Dump<T>(string label, T data) where T : struct
         {
             string fields = string.Join("; ", typeof(T).GetFields(BindingFlags.Instance | BindingFlags.Public)
-                .OrderBy(x => x.Name).Select(field => field.Name + "=" + field.GetValue(data)));
+                .OrderBy(x => x.Name).Select(field => field.Name + "=" + Format(field.GetValue(data), 0)));
             Mod.Log.Info("[DATA] " + label + " " + fields);
+        }
+
+        private static string Format(object? value, int depth)
+        {
+            if (value == null) return "null";
+            Type type = value.GetType();
+            if (type.IsPrimitive || type.IsEnum || value is Entity || value is string || depth >= 3)
+                return value.ToString() ?? "";
+            var fields = type.GetFields(BindingFlags.Instance | BindingFlags.Public);
+            return fields.Length == 0 ? value.ToString() ?? "" : "{" + string.Join(",", fields.Take(16)
+                .Select(field => field.Name + "=" + Format(field.GetValue(value), depth + 1))) + "}";
         }
     }
 }
