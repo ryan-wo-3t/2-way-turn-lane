@@ -7,6 +7,7 @@ using Game.City;
 using Game.Net;
 using Game.Simulation;
 using Game.UI.InGame;
+using RoadBuilder.Systems.UI;
 using Unity.Entities;
 
 namespace Twtl.Mod.Diagnostics
@@ -23,11 +24,24 @@ namespace Twtl.Mod.Diagnostics
             try
             {
                 Entity selected = World.GetOrCreateSystemManaged<SelectedInfoUISystem>().selectedEntity;
+                string selectionSource = "SelectedInfoUISystem";
                 if (selected == Entity.Null || !EntityManager.Exists(selected) || !EntityManager.HasBuffer<SubLane>(selected))
-                { Mod.Log.Warn("[CAPTURE] Select a road segment with SubLane data first."); return; }
+                {
+                    // Road Builder's editor owns its selected edge independently of the
+                    // game's info panel. Use that public selection only for this read-only
+                    // one-shot capture; never use it to authorize traffic or mutate a road.
+                    Entity working = World.GetExistingSystemManaged<RoadBuilderUISystem>()?.WorkingEntity ?? Entity.Null;
+                    if (working != Entity.Null && EntityManager.Exists(working) && EntityManager.HasBuffer<SubLane>(working))
+                    {
+                        selected = working;
+                        selectionSource = "RoadBuilderUISystem.WorkingEntity";
+                    }
+                }
+                if (selected == Entity.Null || !EntityManager.Exists(selected) || !EntityManager.HasBuffer<SubLane>(selected))
+                { Mod.Log.Warn("[CAPTURE] Select a road segment with SubLane data in the game info panel or Road Builder editor first."); return; }
                 bool leftHand = World.GetOrCreateSystemManaged<CityConfigurationSystem>().leftHandTraffic;
                 uint frame = World.GetOrCreateSystemManaged<SimulationSystem>().frameIndex;
-                Mod.Log.Info($"[CAPTURE] owner={selected} frame={frame} leftHandTraffic={leftHand}");
+                Mod.Log.Info($"[CAPTURE] source={selectionSource} owner={selected} frame={frame} leftHandTraffic={leftHand}");
                 // EntityManager read APIs complete conflicting tracked jobs before accessing buffers.
                 // Captures may stall simulation and are never performed continuously.
                 var lanes = EntityManager.GetBuffer<SubLane>(selected, true);

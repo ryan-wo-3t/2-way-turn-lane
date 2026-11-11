@@ -10,7 +10,7 @@ These tests do not create Unity entities, call native navigation or validate a R
 
 ## Milestone 1 local gate
 
-Follow LOCAL_BUILD.md. Preserve actual compiler output and `[API]` audit. Verify no registration by default, then opt in and verify the explicitly CLOSED entry appears. Inspect that it has no drivable car/track lanes and that original lane prefabs are unchanged. Test late prefab discovery, both traffic handedness settings, research toggle semantics and Road Builder regeneration. If validation cannot run before generation, keep live traffic unavailable and document the missing callback.
+Follow LOCAL_BUILD.md. Preserve actual compiler output and `[API]` audit. Verify no registration by default, then opt in and verify the explicitly CLOSED entry appears. Inspect that it has no drivable car/track lanes and that original lane prefabs are unchanged. Test late prefab discovery, both traffic handedness settings, research toggle semantics and Road Builder regeneration. If validation cannot run before generation, keep live traffic unavailable and document the missing callback. The 1.6.4f1 clean-playset test has passed opted-in discovery, picker search, closed-section insertion and Road Builder config persistence; the remaining native topology and lifecycle gates are open (LOCAL_VERIFICATION.md).
 
 ## Milestone 2 native opposing-lane experiment — NOT EXECUTED
 
@@ -54,7 +54,7 @@ Every scenario below remains **NOT RUN** unless explicitly updated with live evi
 | 21 | Four drivable lane asymmetric layout | Drivable prefab fixture |
 | 22 | Five drivable lane layout | Drivable prefab fixture |
 | 23 | Larger compatible layouts | Drivable prefab fixture |
-| 24 | Road Builder custom lane selection | Windows build/live discovery |
+| 24 | Road Builder custom lane selection | Closed research section is picker-selectable, but functional drivable TWLTL selection remains unavailable |
 | 25 | Upgrades/configuration edits clean state | Native lifecycle adapter |
 | 26 | Raised median prevents activation | Automatic classification/hook |
 | 27 | Physical barrier prevents activation | Automatic classification/hook |
