@@ -2,7 +2,7 @@
 
 ## Automated core tests
 
-Run the three README commands. The executable harness has 32 named cases, including a seeded 500-request invariant exercise and 40 combinations of lane counts/handedness. It checks touching boundaries, invalid numbers/settings, ordinary-lane classification, obstructions, paint/trams, unknown/failed runtime evidence, turn intent, LHT/property exits, planned distance, valid-turn recovery, conflict separation, body/braking padding, deterministic ordering, duplicate requests, expiry, route cancellation, occupied safety holds, deletion/reset, stale revisions, transition overlap and predicted acceleration/deceleration/stable gaps.
+Run the three README commands. The executable harness has 36 named cases, including four reverse-cubic geometry regressions, a seeded 500-request invariant exercise and 40 combinations of lane counts/handedness. It checks touching boundaries, invalid numbers/settings, ordinary-lane classification, obstructions, paint/trams, unknown/failed runtime evidence, turn intent, LHT/property exits, planned distance, valid-turn recovery, conflict separation, body/braking padding, deterministic ordering, duplicate requests, expiry, route cancellation, occupied safety holds, deletion/reset, stale revisions, transition overlap and predicted acceleration/deceleration/stable gaps.
 
 The model experiment submits three requests to a single physical corridor: forward `[50,80]`, backward `[180,150]` and backward `[90,60]`. With 4 m vehicles, 2 m/s entry speed, 4 m/s² braking, 1.5 s reaction and 2 m standstill clearance, the first protected interval is `[46,87.5]` and the second `[142.5,184]`. Both are granted; the third conflicts and is rejected. The printed timing includes first-call JIT and is not game overhead.
 
@@ -27,7 +27,7 @@ Select Approach A only if native braking/reservations and route restrictions sat
 
 ## In-game acceptance ledger
 
-Every scenario below is **NOT RUN**. The game, licensed assemblies and a verified drivable fixture were unavailable. These are release gates, not unit-test results.
+Every scenario below remains **NOT RUN** unless explicitly updated with live evidence. The Windows continuation now has a real compiled/postprocessed 1.6.4f1 build; a verified drivable fixture remains unavailable. These are release gates, not unit-test results. See LOCAL_VERIFICATION.md for narrower build and load evidence.
 
 | ID | Required in-game scenario | Current blocker |
 | --- | --- | --- |

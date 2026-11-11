@@ -11,7 +11,8 @@ An experimental Road Builder add-on for Cities: Skylines II. The goal is one phy
 - Predictive merge-gap advice with bounded acceleration/deceleration, trajectory checks and gap preference hysteresis. Advice never authorizes a game lane change.
 - Intersection transition planning with a closed fallback for short segments and prohibited turns.
 - An external Road Builder research section, a one-shot selected-road geometry/overlap/occupancy inspector, and a reflection-based game API signature audit.
-- Thirty-two executable core tests and GitHub Actions verification, without game DLLs or fabricated API stubs.
+- Thirty-six executable core tests, including reverse-curve geometry regressions, without game DLLs or fabricated API stubs.
+- Native reverse-curve/reciprocal-overlap diagnostics, upcoming route-buffer capture and native blocker observations.
 
 ## Build and verify
 
@@ -25,11 +26,11 @@ dotnet run --project tests/Twtl.Core.Tests -c Release --no-build -- --experiment
 
 This is an executable test harness: `dotnet test` does not run these tests. The process exits nonzero on any failure. The experiment is explicitly an offline model; it does not construct game lanes.
 
-The actual mod requires Windows, a licensed game installation, its official modding toolchain, and Road Builder built from the inspected commit. See [local build](docs/LOCAL_BUILD.md). The game adapter has **not** been compiled or run against game assemblies. Current stable public announcements identify 1.6.2f1; binary compatibility remains unverified. The separate performance beta is outside the research target.
+The actual mod requires Windows, a licensed game installation, its official modding toolchain, and Road Builder. The adapter now **compiles and completes official postprocessing against the owner's installed 1.6.4f1 assemblies and Road Builder 0.8.0.0**, with 0 warnings and 0 errors. This does not establish working turn-lane traffic. See [local build](docs/LOCAL_BUILD.md) and [installed verification](docs/LOCAL_VERIFICATION.md) for dependency identities and the runtime boundary.
 
 ## Development status
 
-Milestone 1 is partially implemented: source verification and the closed lane integration exist; the real game build, live picker verification and automatic configuration hook remain open. Milestone 2 has inspection tools and a test protocol; the opposing logical-lane experiment has not been executed. Later milestones have isolated calculation prototypes, with no traffic actuation.
+Milestone 1 has a verified real game build; live picker verification and the automatic configuration hook remain open. Milestone 2 has native inspection tools and a test protocol; the opposing logical-lane experiment has not been executed. Later milestones have isolated calculation prototypes, with no traffic actuation. [The original specification](docs/ORIGINAL_SPECIFICATION.md) is the requirements; the installed 1.6.4f1 APIs supersede its initial 1.6.2f1 research target.
 
 Read the [implementation report](docs/IMPLEMENTATION_REPORT.md), [architecture](docs/ARCHITECTURE.md), [API evidence](docs/GAME_API_COMPATIBILITY.md), [research](docs/RESEARCH.md), [Road Builder integration](docs/ROAD_BUILDER_INTEGRATION.md), [test plan](docs/TEST_PLAN.md) and [limitations](docs/KNOWN_LIMITATIONS.md) before continuing development.
 

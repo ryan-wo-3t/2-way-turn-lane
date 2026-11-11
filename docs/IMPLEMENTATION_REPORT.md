@@ -1,5 +1,13 @@
 # Implementation and verification report
 
+## Windows continuation, 2026-11-10
+
+Integrated specification commit `1971f05` without discarding local work and read the full ORIGINAL_SPECIFICATION.md. Verified the owner's installed CS2 **1.6.4f1**, official Unity/toolchain and Road Builder **0.8.0.0**. Commit `6339581` repairs and verifies the complete native build pipeline, including official IL/Burst postprocessing and correct staging order. All outputs remain ignored and outside GitHub.
+
+The continuation adds fail-checked closed-section registration with fresh Road Builder metadata, MainLoop registration so late options changes can be handled, discovery acknowledgement through Road Builder's public catalogue, reverse-curve/reciprocal-overlap diagnostics, native lane-node/blocker/upcoming-path captures, and four geometry regressions. The core suite passes **36/36**. The full mod build reports **0 warnings / 0 errors** against real installed assemblies. Read [LOCAL_VERIFICATION.md](LOCAL_VERIFICATION.md) for commands, binary identities, static native observations and outstanding runtime work.
+
+**Functional shared-lane traffic remains unfinished.** No native collision, turn-only routing, entry enforcement, merging, tram or junction acceptance result follows from this compile. The historical cloud report below remains the record of the original foundation; its unavailable-assemblies and uncompiled-adapter statements are superseded by the Windows verification above.
+
 Date: 2026-11-06. Repository: `ryan-wo-3t/2-way-turn-lane`. Branch: `codex/twtl-foundation`. Review: [draft PR #1](https://github.com/ryan-wo-3t/2-way-turn-lane/pull/1). Original base: `b79d2016ffaae0837170fd3e2a4cf491870a6b2f`. Original Ryan Gordon MIT LICENSE retained verbatim.
 
 ## Outcome and completion boundary

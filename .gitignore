@@ -5,6 +5,9 @@
 *.dll
 *.pdb
 *.zip
+*.exe
+*.so
+*.bundle
 local.props
 artifacts/
 work/

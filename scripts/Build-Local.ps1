@@ -11,7 +11,16 @@ $sdk = Get-Command dotnet -ErrorAction SilentlyContinue
 $dotnet = if ($sdk) { $sdk.Source } else { Join-Path $env:ProgramFiles 'dotnet/dotnet.exe' }
 if (!(Test-Path -LiteralPath $dotnet -PathType Leaf)) { throw 'Install .NET SDK 8.' }
 $toolPath = [Environment]::GetEnvironmentVariable('CSII_TOOLPATH', 'User')
-if (!(Test-Path -LiteralPath (Join-Path $toolPath 'Mod.props'))) { throw 'Install the official in-game modding toolchain.' }
+if (!$toolPath -or !(Test-Path -LiteralPath (Join-Path $toolPath 'Mod.props'))) { throw 'Install the official in-game modding toolchain.' }
+if ($Deploy) {
+    if (Get-Process Cities2 -ErrorAction SilentlyContinue) { throw 'Close CS2 before replacing the local development mod.' }
+    $localMods = [Environment]::GetEnvironmentVariable('CSII_LOCALMODSPATH', 'User')
+    if (!$localMods -or ![IO.Path]::IsPathRooted($localMods)) { throw 'The official local mods directory must be an absolute path.' }
+    $localMods = [IO.Path]::GetFullPath($localMods).TrimEnd('\', '/')
+    $deployment = [IO.Path]::GetFullPath((Join-Path $localMods 'TwoWayTurnLane'))
+    if ((Split-Path $deployment -Parent) -ne $localMods) { throw 'Deployment must remain inside the official local mods directory.' }
+    Write-Host "Official WIP deployment will replace only $deployment"
+}
 if (!$RoadBuilderAssembly) {
     $modsPath = [Environment]::GetEnvironmentVariable('CSII_PDXMODSPATH', 'User')
     if (!$modsPath) { throw 'Pass -RoadBuilderAssembly with the actual installed or locally built RoadBuilder.dll.' }

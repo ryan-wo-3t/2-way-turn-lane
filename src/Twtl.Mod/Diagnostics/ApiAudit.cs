@@ -14,7 +14,9 @@ namespace Twtl.Mod.Diagnostics
             "Game.Simulation.CarNavigationSystem", "Game.Simulation.CarLaneSpeedIterator",
             "Game.Net.LaneOverlapSystem", "Game.Net.LaneOverlap", "Game.Net.LaneReservation",
             "Game.Simulation.NetLaneReservationSystem", "Game.Pathfind.PathfindSetupSystem",
-            "Game.Simulation.PathfindSetupSystem", "Game.City.CityConfigurationSystem"
+            "Game.Simulation.PathfindSetupSystem", "Game.City.CityConfigurationSystem",
+            "Game.Vehicles.CarCurrentLane", "Game.Vehicles.CarNavigationLane", "Game.Pathfind.PathElement",
+            "Game.Pathfind.PathOwner", "Game.Vehicles.Blocker", "Game.Net.EdgeLane", "Game.Net.NodeLane"
         };
         public static void Write(ILog log)
         {

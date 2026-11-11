@@ -2,7 +2,7 @@
 
 Research date: 2026-11-06. Public stable target: **1.6.2f1**. [Official Steam announcement feed](https://steamcommunity.com/app/949230/allnews) lists the September 15 Autumn Breeze patch and an October 28 separate `performance-test` beta. Public version announcements do not establish the owner's installed binary or API compatibility. Record the actual branch and game display version locally.
 
-**No proprietary game assembly was available. No exact game API signature or execution order has been verified against Game.dll in this task.** No proprietary source or binary is committed. `Twtl.Mod` is source-verified against usage in public mods, not game-compiled.
+**Update 2026-11-10:** The adapter now compiles and completes official IL/Burst postprocessing against the installed **1.6.4f1** assemblies and Road Builder **0.8.0.0**, with 0 warnings/errors. See [installed verification](LOCAL_VERIFICATION.md) for MVIDs, hashes, native review and remaining runtime gates. The original table below records the earlier source-only research; it does not override the installed evidence. No proprietary source or binary is committed.
 
 | API surface | Evidence inspected | Verification level |
 | --- | --- | --- |

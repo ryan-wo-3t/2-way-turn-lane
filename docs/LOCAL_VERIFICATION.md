@@ -28,7 +28,7 @@ The existing mod code compiled against the installed assemblies without C# API e
 
 `scripts/Build-Local.ps1` now builds and stages under ignored `artifacts/local-mods/TwoWayTurnLane` by default; `-Deploy` explicitly selects the official local game mod directory. No game or dependency DLL is staged or committed. The official processor completed IL processing and Burst outputs for Windows, macOS and Linux. The verified build reported **0 warnings / 0 errors**. These platform outputs are build evidence, not platform gameplay acceptance.
 
-The original executable core suite passed **32/32** locally and its three-request offline reservation experiment passed. Raw compiler/postprocessor output and the metadata audit are retained under ignored `work/`.
+The original executable core suite passed **32/32** locally and its three-request offline reservation experiment passed. The continuation adds four reverse-cubic geometry regression cases; the expanded suite passes **36/36**. Raw compiler/postprocessor output and the metadata audit are retained under ignored `work/`.
 
 ```powershell
 ./scripts/Build-Local.ps1
@@ -37,6 +37,22 @@ The original executable core suite passed **32/32** locally and its three-reques
 
 The inspector reads assembly metadata only. It never exports method bodies. Current `Game.Net.LaneOverlap` endpoint fields are bytes; `PrefabSystem.AddPrefab` returns `bool`. Compiler compatibility and member presence establish neither opposing braking semantics nor safe route restrictions.
 
+## Private native review
+
+Installed Game.dll was inspected locally with ILSpyCmd 9.1.0.7988. Decompiled files remain exclusively under ignored `work/native`; none are staged or published. These are observations from this binary, not a claim of successful vehicle trials:
+
+- `LaneOverlapSystem`'s pair-generation path skips ordinary edge-to-edge lane pairs. Therefore two opposite edge lanes in the same corridor must not be assumed to receive automatic reciprocal overlap records. This is a specific generation-path restriction, not proof that manually supplied overlap data cannot work.
+- `CarLaneSpeedIterator.CheckOverlappingLanes` consumes byte endpoints as normalized curve parameters and reads other-lane object buffers and reservation priorities. It uses overlap flags, direction and parallelism in its speed calculations. Parameter distance is not a general physical arc-length coordinate.
+- `CheckOverlapSpace`, `CheckSpace` and `UpdateMaxSpeed` exist with signatures captured by the local metadata audit. Overlap presence alone does not prove useful opposing braking or conflict admission.
+- `Game.Common.SystemOrder` registers overlap generation in `Modification4B`, pathfinding setup in `MainLoop`, and navigation/actions, vehicle movement and lane-reservation maintenance in simulation phases. The explicit navigation-actions dependency is visible. Registration order alone is not full job-dependency or custom-mod ordering proof.
+- Native reservation maintenance is frame-bucketed and updates next/previous reservation data. An independent managed hold must not be written blindly into this transient native state.
+
+The added one-shot selected-road inspector reports lane nodes and edge/node classifications, candidate reversed cubic pairs, both directions of native overlap records (with captured/total counts), upcoming path elements from `PathOwner.m_ElementIndex`, navigation lanes and native blocker data. It makes no traffic writes and cannot classify turn purpose or certify braking.
+
+## Initial live load observation
+
+The owner launched CS2 through Steam. At local log time `2026-11-10 20:46:10`, the game loaded `Twtl.Core`, the official Windows Burst output and `TwoWayTurnLane` successfully. The `[API]` audit ran and identified Road Builder 0.8.0.0. This session uses an intermediate continuation build deployed before the final blocker/path-owner additions; those later additions are build-verified separately. Existing playset mods remained enabled, so this is not an isolated compatibility baseline. Main-menu/picker/placed-road checks remain pending.
+
 ## Remaining runtime boundary
 
-No TWTL game session, Road Builder picker verification, drivable fixture, braking trial or turn-only route enforcement has passed yet. Traffic remains unavailable. The next step is to load the postprocessed development mod with Road Builder in a disposable city and verify closed-section discovery before attempting a gated native corridor fixture.
+Initial executable loading passed as described above. No Road Builder picker verification, drivable fixture, braking trial or turn-only route enforcement has passed yet. Traffic remains unavailable. The next step is to verify the closed section in a disposable city before attempting a gated native corridor fixture.

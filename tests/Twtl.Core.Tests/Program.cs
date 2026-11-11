@@ -49,6 +49,36 @@ internal static class Program
     public static int Main(string[] args)
     {
         if (args.Contains("--experiment")) { Experiment(); return 0; }
+        Test("opposite curved corridor geometry is orientation independent", () =>
+        {
+            var a = new Position3(-50, 4, 10); var b = new Position3(-20, 6, 70);
+            var c = new Position3(30, 8, 80); var d = new Position3(70, 12, 90);
+            var curve = new CorridorCurve(a, b, c, d);
+            Assert(curve.IsReverseOf(new CorridorCurve(d, c, b, a), 0.05));
+            Assert(!curve.IsReverseOf(curve, 0.05));
+        });
+        Test("matching endpoints do not hide diverging or vertically separated curves", () =>
+        {
+            var a = new Position3(0, 0, 0); var b = new Position3(30, 0, 0);
+            var c = new Position3(70, 0, 0); var d = new Position3(100, 0, 0);
+            var curve = new CorridorCurve(a, b, c, d);
+            Assert(!curve.IsReverseOf(new CorridorCurve(d, new Position3(70, 0, 5), b, a), 0.05));
+            Assert(!curve.IsReverseOf(new CorridorCurve(new Position3(100, 3, 0), c, b, a), 0.05));
+        });
+        Test("reverse corridor comparison bounds numerical tolerance", () =>
+        {
+            var curve = new CorridorCurve(new Position3(0, 0, 0), new Position3(30, 0, 0),
+                new Position3(70, 0, 0), new Position3(100, 0, 0));
+            Assert(curve.IsReverseOf(new CorridorCurve(new Position3(100, 0.04, 0), curve.C, curve.B, curve.A), 0.05));
+            Assert(!curve.IsReverseOf(new CorridorCurve(new Position3(100, 0.06, 0), curve.C, curve.B, curve.A), 0.05));
+            Throws<ArgumentOutOfRangeException>(() => curve.IsReverseOf(curve, double.NaN));
+            Throws<ArgumentOutOfRangeException>(() => curve.IsReverseOf(curve, 0));
+        });
+        Test("degenerate corridor direction and non-finite geometry rejected", () =>
+        {
+            Assert(!default(CorridorCurve).IsReverseOf(default, 0.05));
+            Throws<ArgumentOutOfRangeException>(() => new Position3(0, double.PositiveInfinity, 0));
+        });
         Test("touching and reversed interval boundaries", () =>
         {
             Assert(new Interval(1, 2).Overlaps(new Interval(2, 3)));
