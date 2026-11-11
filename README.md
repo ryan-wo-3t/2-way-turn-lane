@@ -30,7 +30,7 @@ The actual mod requires Windows, a licensed game installation, its official modd
 
 ## Development status
 
-Milestone 1 has a verified real game build and live closed-section discovery, picker and placement in a clean Road Builder playset; the automatic configuration hook and native lane-entity capture remain open. Milestone 2 has native inspection tools and a test protocol; the opposing logical-lane experiment has not been executed. Later milestones have isolated calculation prototypes, with no traffic actuation. [The original specification](docs/ORIGINAL_SPECIFICATION.md) is the requirements; the installed 1.6.4f1 APIs supersede its initial 1.6.2f1 research target.
+Milestone 1 has a verified real game build and live closed-section discovery, picker, placement, placed-owner lane capture and same-process local save/load in a clean Road Builder playset; the automatic configuration hook and lifecycle gates remain open. Milestone 2 has native inspection tools and a test protocol; the opposing logical-lane experiment has not been executed. Later milestones have isolated calculation prototypes, with no traffic actuation. [The original specification](docs/ORIGINAL_SPECIFICATION.md) is the requirements; the installed 1.6.4f1 APIs supersede its initial 1.6.2f1 research target.
 
 Read the [implementation report](docs/IMPLEMENTATION_REPORT.md), [architecture](docs/ARCHITECTURE.md), [API evidence](docs/GAME_API_COMPATIBILITY.md), [research](docs/RESEARCH.md), [Road Builder integration](docs/ROAD_BUILDER_INTEGRATION.md), [test plan](docs/TEST_PLAN.md) and [limitations](docs/KNOWN_LIMITATIONS.md) before continuing development.
 

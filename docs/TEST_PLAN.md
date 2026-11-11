@@ -10,7 +10,7 @@ These tests do not create Unity entities, call native navigation or validate a R
 
 ## Milestone 1 local gate
 
-Follow LOCAL_BUILD.md. Preserve actual compiler output and `[API]` audit. Verify no registration by default, then opt in and verify the explicitly CLOSED entry appears. Inspect that it has no drivable car/track lanes and that original lane prefabs are unchanged. Test late prefab discovery, both traffic handedness settings, research toggle semantics and Road Builder regeneration. If validation cannot run before generation, keep live traffic unavailable and document the missing callback. The 1.6.4f1 clean-playset test has passed opted-in discovery, picker search, closed-section insertion and Road Builder config persistence; the remaining native topology and lifecycle gates are open (LOCAL_VERIFICATION.md).
+Follow LOCAL_BUILD.md. Preserve actual compiler output and `[API]` audit. Verify no registration by default, then opt in and verify the explicitly CLOSED entry appears. Inspect that it has no drivable car/track lanes and that original lane prefabs are unchanged. Test late prefab discovery, both traffic handedness settings, research toggle semantics and Road Builder regeneration. If validation cannot run before generation, keep live traffic unavailable and document the missing callback. The 1.6.4f1 clean-playset test has passed opted-in discovery, picker search, closed-section insertion, Road Builder config persistence, placed-owner native capture and same-process local save/load of an isolated closed road. Restart, removal, moving-car and native opposing-lane gates remain open (LOCAL_VERIFICATION.md).
 
 ## Milestone 2 native opposing-lane experiment — NOT EXECUTED
 
