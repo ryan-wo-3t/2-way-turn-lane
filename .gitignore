@@ -8,3 +8,5 @@
 local.props
 artifacts/
 work/
+**/Library/
+**/Logs/
