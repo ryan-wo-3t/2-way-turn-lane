@@ -5,6 +5,7 @@ using Game.Prefabs;
 using RoadBuilder.Domain.Components.Prefabs;
 using RoadBuilder.Domain.Enums;
 using RoadBuilder.Systems;
+using UnityEngine;
 
 namespace Twtl.Mod.RoadBuilderIntegration
 {
@@ -38,13 +39,14 @@ namespace Twtl.Mod.RoadBuilderIntegration
                 if ((source.m_SubSections?.Length ?? 0) != 0 || source.m_Pieces == null || source.m_Pieces.Length == 0 ||
                     source.m_Pieces.Any(piece => piece.m_Piece == null || piece.m_Piece.TryGet<NetPieceLanes>(out _)))
                     throw new InvalidOperationException("Empty template has lane-bearing pieces, subsections or incomplete geometry; registration refused.");
-                var section = source.Clone(PrefabName) as NetSectionPrefab
-                    ?? throw new InvalidOperationException("Cannot clone empty net section");
-                // A cloned RB empty variant must not remain linked to its original group.
-                section.Remove<RoadBuilderLaneGroup>();
-                section.Remove<RoadBuilderVanillaLaneGroup>();
-                // Fresh metadata avoids carrying the template's internal built-in ownership flag.
-                section.Remove<RoadBuilderLaneInfo>();
+                // PrefabBase.Clone serializes all attached components through Unity JSON.
+                // Road Builder's ulong category enum is unsupported there in the installed
+                // game. Construct only the verified empty geometry and our own metadata;
+                // never clone/serialize upstream group links or ownership flags.
+                var section = ScriptableObject.CreateInstance<NetSectionPrefab>();
+                section.name = PrefabName;
+                section.m_SubSections = Array.Empty<NetSubSectionInfo>();
+                section.m_Pieces = (NetPieceInfo[])source.m_Pieces.Clone();
                 var info = section.AddOrGetComponent<RoadBuilderLaneInfo>();
                 info.RequireAll = RoadCategory.Road;
                 info.RequireAny = RoadCategory.Road;
@@ -54,7 +56,7 @@ namespace Twtl.Mod.RoadBuilderIntegration
                 if (!World.GetOrCreateSystemManaged<PrefabSystem>().AddPrefab(section))
                     throw new InvalidOperationException("PrefabSystem rejected the research section; registration did not succeed.");
                 registered = true;
-                Mod.Log.Info("Registered CLOSED non-drivable research corridor. Road Builder discovers the Created prefab and refreshes its own picker.");
+                Mod.Log.Info("[RESEARCH] Registered CLOSED non-drivable research corridor; waiting for Road Builder catalogue discovery.");
             }
             catch (Exception error)
             {

@@ -2,7 +2,7 @@
 
 This branch is not a working TWLTL traffic mod. It must not be published as one.
 
-- The Road Builder adapter and diagnostics compile and pass official postprocessing against installed CS2 1.6.4f1 and Road Builder 0.8.0.0. Closed-lane picker visibility and regeneration remain untested. See LOCAL_VERIFICATION.md for exact binary identities.
+- The Road Builder adapter and diagnostics compile and pass official postprocessing against installed CS2 1.6.4f1 and Road Builder 0.8.0.0. The first closed-lane picker test failed because cloning the template serialized an unsupported Road Builder enum. A fresh-prefab fix is built and deployed but awaits a live retest; regeneration remains untested. See LOCAL_VERIFICATION.md for exact binary identities.
 - The opt-in section has no car lanes. It occupies plain surface and provides no actual turn markings or TWLTL traffic function. It is explicitly labelled CLOSED. Once registered, turning the setting off does not unregister a live prefab; restart removes the picker entry.
 - There is no verified representation of opposite logical lanes, native `LaneOverlap` injection, graph restriction, entry enforcement, car braking/speed integration, native reservation adapter or lane-change actuator. All game traffic activation is unavailable.
 - The installed native overlap generator skips ordinary edge-lane pairs. Automatic full-length reciprocal overlaps must not be assumed. Static inspection does not establish whether manually supplied opposing overlaps brake safely; that still requires the isolated native experiment.

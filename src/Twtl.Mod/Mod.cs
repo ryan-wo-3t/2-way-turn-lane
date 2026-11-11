@@ -27,7 +27,9 @@ namespace Twtl.Mod
             Log.Warn("Research build: shared-lane driving is unavailable. Only an explicitly opted-in CLOSED non-drivable lane can be registered.");
             // Options can be enabled after prefab initialization has gone idle. Road Builder
             // also registers its saved road prefabs from MainLoop after generation data exists.
-            updateSystem.UpdateAt<ResearchLaneSystem>(SystemUpdatePhase.MainLoop);
+            // AddPrefab creates Created entities immediately. Run before PrefabSystem so its
+            // same-frame PrefabUpdate lets Road Builder discover them before marker cleanup.
+            updateSystem.UpdateBefore<ResearchLaneSystem, PrefabSystem>(SystemUpdatePhase.MainLoop);
             updateSystem.UpdateAt<SelectedRoadDiagnosticsSystem>(SystemUpdatePhase.UIUpdate);
             research = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<ResearchLaneSystem>();
             diagnostics = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<SelectedRoadDiagnosticsSystem>();
