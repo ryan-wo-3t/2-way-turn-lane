@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <Version>0.1.0</Version>
+    <AssemblyName>TwoWayTurnLane</AssemblyName>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <CSII_TOOLPATH Condition="'$(CSII_TOOLPATH)' == ''">$([System.Environment]::GetEnvironmentVariable('CSII_TOOLPATH', 'EnvironmentVariableTarget.User'))</CSII_TOOLPATH>
+  </PropertyGroup>
+  <Import Project="$(CSII_TOOLPATH)/Mod.props" Condition="Exists('$(CSII_TOOLPATH)/Mod.props')" />
+  <Import Project="$(CSII_TOOLPATH)/Mod.targets" Condition="Exists('$(CSII_TOOLPATH)/Mod.targets')" />
+  <!-- Keep the official processor and reference set, but avoid cmd.exe's 8191-character
+       command limit (and shell interpretation of ampersands in user profile paths). -->
+  <Target Name="RunModPostProcessor" AfterTargets="AfterBuild" BeforeTargets="DeployWIP" Condition="'$(NeedBuild)'">
+    <PropertyGroup>
+      <TwtlReferenceList>$(IntermediateOutputPath)postprocessor-references.txt</TwtlReferenceList>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(TwtlReferenceList)" Lines="@(ReferencePath)" Overwrite="true" Encoding="UTF-8" />
+    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)/../../scripts/Invoke-ModPostProcessor.ps1&quot; -AssemblyPath &quot;$(TargetPath)&quot; -UnityProjectPath &quot;$(UnityModProjectFullPath)&quot; -PostProcessorPath &quot;$(ModPostProcessorFullPath)&quot; -ReferenceListPath &quot;$(TwtlReferenceList)&quot;" />
+  </Target>
+  <Target Name="RequireLocalDependencies" BeforeTargets="PrepareForBuild">
+    <Error Condition="!Exists('$(CSII_TOOLPATH)/Mod.props') Or !Exists('$(CSII_TOOLPATH)/Mod.targets')" Text="Install the official CS2 Modding Toolchain and set CSII_TOOLPATH. See docs/LOCAL_BUILD.md." />
+    <Error Condition="!Exists('$(RoadBuilderAssembly)')" Text="Pass -p:RoadBuilderAssembly=absolute/path/RoadBuilder.dll built from the pinned source. No stubs are supported." />
+  </Target>
+  <ItemGroup>
+    <ProjectReference Include="../Twtl.Core/Twtl.Core.csproj" />
+    <Reference Include="RoadBuilder"><HintPath>$(RoadBuilderAssembly)</HintPath><Private>false</Private></Reference>
+    <Reference Include="Game"><Private>false</Private></Reference>
+    <Reference Include="Colossal.Core"><Private>false</Private></Reference>
+    <Reference Include="Colossal.Logging"><Private>false</Private></Reference>
+    <Reference Include="Colossal.IO.AssetDatabase"><Private>false</Private></Reference>
+    <Reference Include="Colossal.Localization"><Private>false</Private></Reference>
+    <Reference Include="Colossal.Mathematics"><Private>false</Private></Reference>
+    <Reference Include="Unity.Entities"><Private>false</Private></Reference>
+    <Reference Include="Unity.Collections"><Private>false</Private></Reference>
+    <Reference Include="Unity.Mathematics"><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.CoreModule"><Private>false</Private></Reference>
+  </ItemGroup>
+</Project>

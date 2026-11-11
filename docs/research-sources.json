@@ -1,0 +1,211 @@
+{
+  "inspected_on": "2026-11-06",
+  "game_assemblies_available": false,
+  "implementation_code_copied": false,
+  "sources": [
+    {
+      "repository": "JadHajjar/RoadBuilder-CSII",
+      "commit": "5f4b1ab5d1a5ce4f8d05e4fc89c354f3a1d53485",
+      "license_review": "MIT",
+      "files": [
+        {
+          "path": "RoadBuilder/Domain/Components/Prefabs/RoadBuilderLaneInfo.cs",
+          "blob_sha": "c98d59906d154b0cea0628f86f4171ea46abe8af",
+          "url": "https://github.com/JadHajjar/RoadBuilder-CSII/blob/5f4b1ab5d1a5ce4f8d05e4fc89c354f3a1d53485/RoadBuilder/Domain/Components/Prefabs/RoadBuilderLaneInfo.cs"
+        },
+        {
+          "path": "RoadBuilder/Domain/Components/Prefabs/RoadBuilderLaneGroup.cs",
+          "blob_sha": "3d89a0e5b3b32ace7057afdcf7fc9f58f0601bb3",
+          "url": "https://github.com/JadHajjar/RoadBuilder-CSII/blob/5f4b1ab5d1a5ce4f8d05e4fc89c354f3a1d53485/RoadBuilder/Domain/Components/Prefabs/RoadBuilderLaneGroup.cs"
+        },
+        {
+          "path": "RoadBuilder/Domain/Prefabs/LaneGroupPrefab.cs",
+          "blob_sha": "ab10fd28f3c25cd0e895fd89fe2288c6af381b6e",
+          "url": "https://github.com/JadHajjar/RoadBuilder-CSII/blob/5f4b1ab5d1a5ce4f8d05e4fc89c354f3a1d53485/RoadBuilder/Domain/Prefabs/LaneGroupPrefab.cs"
+        },
+        {
+          "path": "RoadBuilder/Systems/UI/RoadBuilderNetSectionsUISystem.cs",
+          "blob_sha": "fb76727af4d744aa5668c06f2c9ea51e33f42e76",
+          "url": "https://github.com/JadHajjar/RoadBuilder-CSII/blob/5f4b1ab5d1a5ce4f8d05e4fc89c354f3a1d53485/RoadBuilder/Systems/UI/RoadBuilderNetSectionsUISystem.cs"
+        },
+        {
+          "path": "RoadBuilder/RoadBuilder.csproj",
+          "blob_sha": "f64943c6350993bd1a09c74d28aac91295b4c8b3",
+          "url": "https://github.com/JadHajjar/RoadBuilder-CSII/blob/5f4b1ab5d1a5ce4f8d05e4fc89c354f3a1d53485/RoadBuilder/RoadBuilder.csproj"
+        },
+        {
+          "path": "RoadBuilder/Mod.cs",
+          "blob_sha": "06a125737556340f2fc6c2e3ba5a18afa8c4b1d3",
+          "url": "https://github.com/JadHajjar/RoadBuilder-CSII/blob/5f4b1ab5d1a5ce4f8d05e4fc89c354f3a1d53485/RoadBuilder/Mod.cs"
+        },
+        {
+          "path": "RoadBuilder/Systems/RoadBuilderNetSectionsSystem.cs",
+          "blob_sha": "871e67268b0b73a2935bb4be0755da83b0c5460b",
+          "url": "https://github.com/JadHajjar/RoadBuilder-CSII/blob/5f4b1ab5d1a5ce4f8d05e4fc89c354f3a1d53485/RoadBuilder/Systems/RoadBuilderNetSectionsSystem.cs"
+        },
+        {
+          "path": "RoadBuilder/Systems/RoadBuilderGenerationDataSystem.cs",
+          "blob_sha": "542806bbe9b68edc2031f0f13dc3b4802d378609",
+          "url": "https://github.com/JadHajjar/RoadBuilder-CSII/blob/5f4b1ab5d1a5ce4f8d05e4fc89c354f3a1d53485/RoadBuilder/Systems/RoadBuilderGenerationDataSystem.cs"
+        },
+        {
+          "path": "RoadBuilder/Domain/Components/Prefabs/RoadBuilderLaneOption.cs",
+          "blob_sha": "d006a2bf804b05562f3157621a0d327e1b017ca5",
+          "url": "https://github.com/JadHajjar/RoadBuilder-CSII/blob/5f4b1ab5d1a5ce4f8d05e4fc89c354f3a1d53485/RoadBuilder/Domain/Components/Prefabs/RoadBuilderLaneOption.cs"
+        },
+        {
+          "path": "RoadBuilder/Domain/Components/Prefabs/LaneOptionCombination.cs",
+          "blob_sha": "02eacab05246530079e4de13b373ba8e5e1be92e",
+          "url": "https://github.com/JadHajjar/RoadBuilder-CSII/blob/5f4b1ab5d1a5ce4f8d05e4fc89c354f3a1d53485/RoadBuilder/Domain/Components/Prefabs/LaneOptionCombination.cs"
+        },
+        {
+          "path": "RoadBuilder/Setting.cs",
+          "blob_sha": "3a92050557e063ccbd66cec1a407451390cc678c",
+          "url": "https://github.com/JadHajjar/RoadBuilder-CSII/blob/main/RoadBuilder/Setting.cs"
+        },
+        {
+          "path": "LICENSE",
+          "blob_sha": "7077f252c317178be2fb2cde1e4e65f974f89845",
+          "url": "https://github.com/JadHajjar/RoadBuilder-CSII/blob/main/LICENSE"
+        },
+        {
+          "path": "README.md",
+          "blob_sha": "7f487ceb31938f68703eb94a9c05ab43929ef62c",
+          "url": "https://github.com/JadHajjar/RoadBuilder-CSII/blob/5f4b1ab5d1a5ce4f8d05e4fc89c354f3a1d53485/README.md"
+        },
+        {
+          "path": "RoadBuilder/Utilities/NetworkConfigExtensionsUtil.cs",
+          "blob_sha": "a4ec3ec8db520709d6a3ba5ea9407bce66e8e81b",
+          "url": "https://github.com/JadHajjar/RoadBuilder-CSII/blob/5f4b1ab5d1a5ce4f8d05e4fc89c354f3a1d53485/RoadBuilder/Utilities/NetworkConfigExtensionsUtil.cs"
+        },
+        {
+          "path": "RoadBuilder/Domain/Enums/RoadCategory.cs",
+          "blob_sha": "a9845158754db9f256bbfb15c5a04657d25b1974",
+          "url": "https://github.com/JadHajjar/RoadBuilder-CSII/blob/5f4b1ab5d1a5ce4f8d05e4fc89c354f3a1d53485/RoadBuilder/Domain/Enums/RoadCategory.cs"
+        }
+      ]
+    },
+    {
+      "repository": "krzychu124/Traffic",
+      "commit": "ce1551f19d0341d7a4a6bb126daa515c6c021b43",
+      "license_review": "No root LICENSE in inspected listing; no implementation copied",
+      "files": [
+        {
+          "path": "Code/Mod.cs",
+          "blob_sha": "f35cfd12233f9db1030a16c639b4a9552e828a57",
+          "url": "https://github.com/krzychu124/Traffic/blob/main/Code/Mod.cs"
+        },
+        {
+          "path": "Code/Traffic.csproj",
+          "blob_sha": "1634fd56a0f8250a245d810cc12a9e8e8f642d22",
+          "url": "https://github.com/krzychu124/Traffic/blob/main/Code/Traffic.csproj"
+        },
+        {
+          "path": "README.md",
+          "blob_sha": "171a976ab6f73de229b050aa823811705ad0c501",
+          "url": "https://github.com/krzychu124/Traffic/blob/main/README.md"
+        }
+      ]
+    },
+    {
+      "repository": "yuexian7/AccessAnarchy",
+      "commit": "6567d61c0ee39228b032a28aac42ac23a3fc492d",
+      "license_review": "No root LICENSE in inspected listing; no implementation copied",
+      "files": [
+        {
+          "path": "Systems/AccessZoneOverlapSystem.cs",
+          "blob_sha": "7680c164260c28ddbf4bbecb8b215c1d6644b9b8",
+          "url": "https://github.com/yuexian7/AccessAnarchy/blob/main/Systems/AccessZoneOverlapSystem.cs"
+        },
+        {
+          "path": "README.md",
+          "blob_sha": "deebbd02e0cd60d0058afbaf64953aa485583848",
+          "url": "https://github.com/yuexian7/AccessAnarchy/blob/main/README.md"
+        }
+      ]
+    },
+    {
+      "repository": "huangjialin1118/CollisionBeGone",
+      "commit": "34de05c17e43fb10f004f2a563f79372258f6239",
+      "license_review": "MIT",
+      "files": [
+        {
+          "path": "CollisionBeGone/Mod.cs",
+          "blob_sha": "464a3f5b08ebdcfdaf6a63e84845abf856bb3e30",
+          "url": "https://github.com/huangjialin1118/CollisionBeGone/blob/main/CollisionBeGone/Mod.cs"
+        },
+        {
+          "path": "CollisionBeGone/Systems/GhostLaneSpeedIterator.cs",
+          "blob_sha": "3b5143ce6ada591f340ce438b638f27f0a9227b2",
+          "url": "https://github.com/huangjialin1118/CollisionBeGone/blob/main/CollisionBeGone/Systems/GhostLaneSpeedIterator.cs"
+        },
+        {
+          "path": "CollisionBeGone/Systems/CbgSelectedParkingDumpSystem.cs",
+          "blob_sha": "78f640d51b7b5cc3182cf33da6b233f88787906d",
+          "url": "https://github.com/huangjialin1118/CollisionBeGone/blob/main/CollisionBeGone/Systems/CbgSelectedParkingDumpSystem.cs"
+        },
+        {
+          "path": "LICENSE",
+          "blob_sha": "35cab287bbb65cc12e77d4049160fcb08a39c224",
+          "url": "https://github.com/huangjialin1118/CollisionBeGone/blob/main/LICENSE"
+        }
+      ]
+    },
+    {
+      "repository": "northernst11-bot/RoadConstructionEvents",
+      "commit": "f6b0bea314f21dbc40677f95bcc4021ce05d9867",
+      "license_review": "MIT",
+      "files": [
+        {
+          "path": "Mod.cs",
+          "blob_sha": "c56264d4cf4f36f7362eeda44d69c57131c212af",
+          "url": "https://github.com/northernst11-bot/RoadConstructionEvents/blob/main/Mod.cs"
+        },
+        {
+          "path": "Systems/RoadConstructionSystem.cs",
+          "blob_sha": "d661f2e1491ad37f9b9b9f4aa6c668cbdc28ca93",
+          "url": "https://github.com/northernst11-bot/RoadConstructionEvents/blob/main/Systems/RoadConstructionSystem.cs"
+        },
+        {
+          "path": "LICENSE",
+          "blob_sha": "08e4acb8e84d63b0b3e50efc4a9ed8cbf9c5b72a",
+          "url": "https://github.com/northernst11-bot/RoadConstructionEvents/blob/main/LICENSE"
+        }
+      ]
+    },
+    {
+      "repository": "lucarager/CS2-NetworkTools",
+      "commit": "5a4c8dfef850bb76bfa5c3baf75e9c07f6b3679a",
+      "license_review": "MIT",
+      "files": [
+        {
+          "path": "NetworkTools.Mod/NetworkToolsMod.cs",
+          "blob_sha": "de61d547a22aa6d47e32f9ed13ebe20327b69d8a",
+          "url": "https://github.com/lucarager/CS2-NetworkTools/blob/main/NetworkTools.Mod/NetworkToolsMod.cs"
+        },
+        {
+          "path": "LICENSE.txt",
+          "blob_sha": "08b6f618fe37edbb5e8c4a0fd1e2f077cd237e86",
+          "url": "https://github.com/lucarager/CS2-NetworkTools/blob/main/LICENSE.txt"
+        }
+      ]
+    },
+    {
+      "repository": "RaftermanNZ/Curbside",
+      "commit": "ebad24a2ed92b6ba2c5a02a52877e6eb204d5f4f",
+      "license_review": "MIT original code; separate artwork rights",
+      "files": [
+        {
+          "path": "Mod.cs",
+          "blob_sha": "42b6432966e60212d3f56457a7184947cb839b90",
+          "url": "https://github.com/RaftermanNZ/Curbside/blob/ebad24a2ed92b6ba2c5a02a52877e6eb204d5f4f/Mod.cs"
+        },
+        {
+          "path": "README.md",
+          "blob_sha": "d4723c0a27681eee399c18ff49a7e3cae7784e80",
+          "url": "https://github.com/RaftermanNZ/Curbside/blob/main/README.md"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+**/bin/
+**/obj/
+.vs/
+*.user
+*.dll
+*.pdb
+*.zip
+*.exe
+*.so
+*.bundle
+local.props
+artifacts/
+work/
+**/Library/
+**/Logs/
