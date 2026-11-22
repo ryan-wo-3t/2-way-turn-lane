@@ -8,7 +8,7 @@ The continuation adds fail-checked closed-section registration with fresh Road B
 
 **Functional shared-lane traffic remains unfinished.** No native collision, turn-only routing, entry enforcement, merging, tram or junction acceptance result follows from this compile. The historical cloud report below remains the record of the original foundation; its unavailable-assemblies and uncompiled-adapter statements are superseded by the Windows verification above.
 
-The next read-only one-shot capture now audits installed native `CarLane.m_Twoway` prefab candidates for the isolated fixture. It was build-verified and run live on 1.6.4f1. The relevant catalogue candidate is `Invisible Car Twoway Lane 3`; its generated graph and vehicle behavior remain unverified. The code does not register a drivable lane.
+The next read-only one-shot capture now audits installed native `CarLane.m_Twoway` prefab candidates for the isolated fixture. It was build-verified and run live on 1.6.4f1. The relevant catalogue candidate is `Invisible Car Twoway Lane 3`; installed native generation code indicates that a two-way prefab creates one edge car lane accessible from both ends. Its generated graph and vehicle behavior remain unverified. The code does not register a drivable lane.
 
 Date: 2026-11-06. Repository: `ryan-wo-3t/2-way-turn-lane`. Branch: `codex/twtl-foundation`. Review: [draft PR #1](https://github.com/ryan-wo-3t/2-way-turn-lane/pull/1). Original base: `b79d2016ffaae0837170fd3e2a4cf491870a6b2f`. Original Ryan Gordon MIT LICENSE retained verbatim.
 
