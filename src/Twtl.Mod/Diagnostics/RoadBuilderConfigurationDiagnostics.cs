@@ -47,12 +47,15 @@ namespace Twtl.Mod.Diagnostics
                 string sectionName = lane.SectionPrefabName ?? "";
                 Mod.Log.Info($"[CONFIG] index={i} section={sectionName} group={lane.GroupPrefabName} invert={lane.Invert}");
                 if (sectionName == RoadBuilderIntegration.ResearchLaneSystem.PrefabName) closedCount++;
-                if (sectionName.Length == 0 || catalogue == null || !catalogue.NetSections.TryGetValue(sectionName, out var section))
+                if (catalogue?.RoadGenerationData == null ||
+                    !NetworkPrefabGenerationUtil.GetNetSection(catalogue.RoadGenerationData, config, lane, out var section, out _) ||
+                    section == null)
                 {
                     if (sectionName == RoadBuilderIntegration.ResearchLaneSystem.PrefabName) closedFullyInspected = false;
-                    Mod.Log.Info($"[CONFIG] index={i} section prefab unavailable or group-based; piece lanes unknown");
+                    Mod.Log.Info($"[CONFIG] index={i} section variant unresolved; piece lanes unknown");
                     continue;
                 }
+                Mod.Log.Info($"[CONFIG] index={i} resolvedSection={section.name}; Road Builder selected variant");
                 var subSections = section.m_SubSections;
                 if (subSections != null && subSections.Length > 0)
                 {
