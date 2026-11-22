@@ -85,3 +85,9 @@ The next read-only diagnostic enumerates Road Builder's installed lane catalogue
 ## Remaining runtime boundary
 
 The corrected registration, picker, closed cross-section placement, owner-level native capture, same-process local save/load and configuration-variant resolution passed in the clean playset. Game-restart persistence, mod removal, drivable fixture, braking trial and turn-only route enforcement have not passed. Traffic remains unavailable. The next step is a separately gated native opposing-corridor fixture using verified 1.6.4f1 lane-generation APIs, plus investigation of Road Builder's transient startup warning.
+
+### Native two-way section reference check, 2026-11-22
+
+The read-only direct-reference census was built through the official local pipeline against installed CS2 1.6.4f1 and Road Builder 0.8.0.0 with **0 warnings / 0 errors**, then deployed with CS2 closed. In the clean `2wtl - dev` playset, a new game process loaded the local `Stroud` save. A one-shot selected-road capture at `16:11:30` found that the installed Road Builder catalogue's `Invisible Car Twoway Section 3` contains two direct piece references to `Invisible Car Twoway Piece 3`, whose lane is `Invisible Car Twoway Lane 3`. The reported count of two is reference occurrences within that section, not two distinct sections or generated lanes. The lane prefab has width 3 m, road type Car/Bicycle, and `CarLane.m_Twoway=true`.
+
+This identifies the installed section and piece chain for a possible isolated fixture. The census does not evaluate piece requirements, nested subsections, generated lane entities, routing, occupancy, braking or car behaviour. The existing CLOSED tile still contains no vehicle lane. The code was pushed in commit `a906eb6`; game and Road Builder binaries remain local.
