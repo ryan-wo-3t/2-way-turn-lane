@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Game;
 using Game.Prefabs;
 using RoadBuilder.Domain.Components.Prefabs;
@@ -117,7 +116,8 @@ namespace Twtl.Mod.RoadBuilderIntegration
                     Name = "TWTL NATIVE UNSAFE TEST ROAD - DISCONNECTED ONLY",
                     Version = RoadBuilderSerializeSystem.CURRENT_VERSION,
                     Category = RoadCategory.Road,
-                    SpeedLimit = 40f / 3.6f,
+                    // Road Builder's metric options display SpeedLimit / 2 as km/h.
+                    SpeedLimit = 80f,
                     ToolbarState = ShowInToolbarState.Show,
                     Lanes = new List<LaneConfig>
                     {
