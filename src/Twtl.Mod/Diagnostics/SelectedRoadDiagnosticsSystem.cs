@@ -55,6 +55,7 @@ namespace Twtl.Mod.Diagnostics
                 try { NativeLanePrefabDiagnostics.Write(World); }
                 catch (Exception error) { Mod.Log.Error(error, "Native two-way prefab catalogue capture failed; continuing native lane capture."); }
                 CorridorTopologyDiagnostics.Write(EntityManager, identities);
+                PathNodeContinuityDiagnostics.Write(EntityManager, identities);
                 int vehicleBudget = 32;
                 foreach (Entity lane in identities)
                 {
