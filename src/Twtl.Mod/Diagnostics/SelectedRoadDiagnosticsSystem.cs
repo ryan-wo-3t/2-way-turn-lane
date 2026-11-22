@@ -50,6 +50,8 @@ namespace Twtl.Mod.Diagnostics
                 var identities = new Entity[count];
                 for (int i = 0; i < count; i++) identities[i] = lanes[i].m_SubLane;
                 Mod.Log.Info($"[CAPTURE] lanes={lanes.Length} captured={count}");
+                try { RoadBuilderConfigurationDiagnostics.Write(World, EntityManager, selected); }
+                catch (Exception error) { Mod.Log.Error(error, "Road Builder configuration capture failed; continuing native lane capture."); }
                 CorridorTopologyDiagnostics.Write(EntityManager, identities);
                 int vehicleBudget = 32;
                 foreach (Entity lane in identities)
