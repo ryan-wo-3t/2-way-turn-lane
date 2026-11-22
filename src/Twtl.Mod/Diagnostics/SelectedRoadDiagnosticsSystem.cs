@@ -52,6 +52,8 @@ namespace Twtl.Mod.Diagnostics
                 Mod.Log.Info($"[CAPTURE] lanes={lanes.Length} captured={count}");
                 try { RoadBuilderConfigurationDiagnostics.Write(World, EntityManager, selected); }
                 catch (Exception error) { Mod.Log.Error(error, "Road Builder configuration capture failed; continuing native lane capture."); }
+                try { NativeLanePrefabDiagnostics.Write(World); }
+                catch (Exception error) { Mod.Log.Error(error, "Native two-way prefab catalogue capture failed; continuing native lane capture."); }
                 CorridorTopologyDiagnostics.Write(EntityManager, identities);
                 int vehicleBudget = 32;
                 foreach (Entity lane in identities)
