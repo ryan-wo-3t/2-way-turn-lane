@@ -15,6 +15,7 @@ namespace Twtl.Mod
         internal static readonly ILog Log = LogManager.GetLogger("TwoWayTurnLane").SetShowsErrorsInUI(true);
         internal static Settings? Options;
         private ResearchLaneSystem? research;
+        private NativeFixtureSystem? nativeFixture;
         private SelectedRoadDiagnosticsSystem? diagnostics;
 
         public void OnLoad(UpdateSystem updateSystem)
@@ -24,20 +25,23 @@ namespace Twtl.Mod
             Options.RegisterInOptionsUI();
             GameManager.instance.localizationManager.AddSource("en-US", new EnglishLocale(Options));
             ApiAudit.Write(Log);
-            Log.Warn("Research build: shared-lane driving is unavailable. Only an explicitly opted-in CLOSED non-drivable lane can be registered.");
+            Log.Warn("Research build: functional shared-lane driving is unavailable. Experimental native two-way geometry is disabled by default and has no entry or route safeguards.");
             // Options can be enabled after prefab initialization has gone idle. Road Builder
             // also registers its saved road prefabs from MainLoop after generation data exists.
             // AddPrefab creates Created entities immediately. Run before PrefabSystem so its
             // same-frame PrefabUpdate lets Road Builder discover them before marker cleanup.
             updateSystem.UpdateBefore<ResearchLaneSystem, PrefabSystem>(SystemUpdatePhase.MainLoop);
+            updateSystem.UpdateBefore<NativeFixtureSystem, PrefabSystem>(SystemUpdatePhase.MainLoop);
             updateSystem.UpdateAt<SelectedRoadDiagnosticsSystem>(SystemUpdatePhase.UIUpdate);
             research = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<ResearchLaneSystem>();
+            nativeFixture = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<NativeFixtureSystem>();
             diagnostics = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<SelectedRoadDiagnosticsSystem>();
         }
 
         public void OnDispose()
         {
             if (research != null) research.Enabled = false;
+            if (nativeFixture != null) nativeFixture.Enabled = false;
             if (diagnostics != null) diagnostics.Enabled = false;
             Options?.UnregisterInOptionsUI();
             Options = null;

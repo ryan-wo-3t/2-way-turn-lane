@@ -13,8 +13,10 @@ namespace Twtl.Mod
         [SettingsUISection("Research", "Tools")]
         public bool ShowClosedResearchLane { get; set; }
         [SettingsUISection("Research", "Tools")]
+        public bool ShowNativeFixture { get; set; }
+        [SettingsUISection("Research", "Tools")]
         public bool CaptureSelectedRoad { get; set; }
-        public override void SetDefaults() { ShowClosedResearchLane = false; CaptureSelectedRoad = false; }
+        public override void SetDefaults() { ShowClosedResearchLane = false; ShowNativeFixture = false; CaptureSelectedRoad = false; }
     }
 
     internal sealed class EnglishLocale : IDictionarySource
@@ -30,6 +32,8 @@ namespace Twtl.Mod
                 [settings.GetOptionGroupLocaleID("Tools")] = "Research tools",
                 [settings.GetOptionLabelLocaleID(nameof(Settings.ShowClosedResearchLane))] = "Expose closed research corridor",
                 [settings.GetOptionDescLocaleID(nameof(Settings.ShowClosedResearchLane))] = "Adds a non-drivable empty section to Road Builder. It is not a working turn lane. Once added, restart to remove it from the picker. Use a disposable test city.",
+                [settings.GetOptionLabelLocaleID(nameof(Settings.ShowNativeFixture))] = "Expose unsafe native lane test section",
+                [settings.GetOptionDescLocaleID(nameof(Settings.ShowNativeFixture))] = "For a disconnected road in a disposable city only. Adds the game's native 3 m two-way car lane for topology inspection. No entry control, braking proof or turn-only routing. Restart to remove it from the picker.",
                 [settings.GetOptionLabelLocaleID(nameof(Settings.CaptureSelectedRoad))] = "Capture selected road once",
                 [settings.GetOptionDescLocaleID(nameof(Settings.CaptureSelectedRoad))] = "Select a road first, then enable this to log its lane geometry, overlaps and occupants. Automatically resets; no traffic is modified."
             };
