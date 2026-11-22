@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Game;
 using Game.Prefabs;
 using RoadBuilder.Domain.Components.Prefabs;
+using RoadBuilder.Domain.Configurations;
 using RoadBuilder.Domain.Enums;
 using RoadBuilder.Systems;
 using UnityEngine;
@@ -16,11 +18,14 @@ namespace Twtl.Mod.RoadBuilderIntegration
     public partial class NativeFixtureSystem : GameSystemBase
     {
         public const string PrefabName = "TWTL NATIVE TWO-WAY UNSAFE TEST 3m";
+        public const string RoadId = "TWTL_NATIVE_UNSAFE_TEST_ROAD_V1";
         private const string SourceName = "Invisible Car Twoway Section 3";
         private const string LaneName = "Invisible Car Twoway Lane 3";
+        private const string SideLaneName = "Car Drive Section 3";
         private bool registered;
         private bool discovered;
         private bool failed;
+        private bool roadAttempted;
 
         protected override void OnUpdate()
         {
@@ -32,6 +37,12 @@ namespace Twtl.Mod.RoadBuilderIntegration
                 {
                     discovered = true;
                     Mod.Log.Info("[NATIVE TEST] Road Builder discovered the test section; disconnected placement and generated-lane inspection still required.");
+                }
+                if (discovered && !roadAttempted && catalogue != null &&
+                    catalogue.NetSections.ContainsKey(SideLaneName))
+                {
+                    roadAttempted = true;
+                    RegisterTestRoad();
                 }
                 return;
             }
@@ -82,6 +93,47 @@ namespace Twtl.Mod.RoadBuilderIntegration
             {
                 failed = true;
                 Mod.Log.Error(error, "Native test section registration refused; no experimental lane was added.");
+            }
+        }
+
+        private void RegisterTestRoad()
+        {
+            try
+            {
+                var builder = World.GetExistingSystemManaged<RoadBuilderSystem>();
+                if (builder == null)
+                    throw new InvalidOperationException("Road Builder road system is unavailable.");
+                if (builder.Configurations.ContainsKey(RoadId))
+                {
+                    Mod.Log.Info("[NATIVE TEST] Test road already exists; leaving its saved configuration untouched.");
+                    return;
+                }
+
+                // A self-contained road prefab removes a UI drag gesture from the geometry
+                // experiment. It is still never connected to traffic in the test protocol.
+                var config = new RoadConfig
+                {
+                    ID = RoadId,
+                    Name = "TWTL NATIVE UNSAFE TEST ROAD - DISCONNECTED ONLY",
+                    Version = RoadBuilderSerializeSystem.CURRENT_VERSION,
+                    Category = RoadCategory.Road,
+                    SpeedLimit = 40f / 3.6f,
+                    ToolbarState = ShowInToolbarState.Show,
+                    Lanes = new List<LaneConfig>
+                    {
+                        new LaneConfig { SectionPrefabName = SideLaneName, Invert = true },
+                        new LaneConfig { SectionPrefabName = PrefabName },
+                        new LaneConfig { SectionPrefabName = SideLaneName }
+                    }
+                };
+                var road = builder.AddPrefab(config);
+                if (road == null)
+                    throw new InvalidOperationException("Road Builder rejected the preconfigured native test road.");
+                Mod.Log.Warn($"[NATIVE TEST] Registered opt-in road {RoadId} with one native center section and two ordinary car sections. Place only as a disconnected segment in a disposable city; no route or conflict safety exists.");
+            }
+            catch (Exception error)
+            {
+                Mod.Log.Error(error, "Native test road registration failed; the section may still be available in the lane picker.");
             }
         }
     }
