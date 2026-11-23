@@ -18,6 +18,8 @@ A further live read-only pathfinder lookup at `17:39:23` found primary and secon
 
 A second live lookup at `17:50:26` resolved the sampled center `Twoway` lane and an adjacent ordinary lane as `SlaveLane`s. Installed 1.6.4f1 `LanesModifiedSystem/AddPathEdgeJob` and `UpdatePathEdgeJob` explicitly skip slave-lane chunks, which explains their absent direct edges. The sampled `MasterLane` used the center prefab but had no `CarLaneFlags.Twoway` and its graph edge was forward only. All four sampled car prefabs had `Road, Bicycle` path methods and valid pathfind-car data. The diagnostic now records master/slave group and index fields for a follow-up mapping test; its official build passed with 0 warnings/errors. Neither graph reachability through the center nor car conflict safety has been demonstrated.
 
+The follow-up live capture at `17:59:30` found that the sampled center `Twoway` slave and adjacent ordinary slave share group `1` and `masterIndex=0`, with sub-indices `1` and `2`. Their master has group `1`, spans indices `1` to `2`, and has a forward-only graph edge. The opposite ordinary lane has its own forward edge. This maps the fixture's lane grouping but still does not show a reverse route or safe traffic. The game was exited without saving the disposable city.
+
 Date: 2026-11-06. Repository: `ryan-wo-3t/2-way-turn-lane`. Branch: `codex/twtl-foundation`. Review: [draft PR #1](https://github.com/ryan-wo-3t/2-way-turn-lane/pull/1). Original base: `b79d2016ffaae0837170fd3e2a4cf491870a6b2f`. Original Ryan Gordon MIT LICENSE retained verbatim.
 
 ## Outcome and completion boundary
