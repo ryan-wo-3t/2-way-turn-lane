@@ -1,5 +1,6 @@
 using Game.Net;
 using Game.Pathfind;
+using Game.Prefabs;
 using Unity.Entities;
 
 namespace Twtl.Mod.Diagnostics
@@ -28,6 +29,25 @@ namespace Twtl.Mod.Diagnostics
                 inspected++;
                 var car = manager.GetComponentData<Game.Net.CarLane>(lane);
                 bool twoway = (car.m_Flags & CarLaneFlags.Twoway) != 0;
+                if (manager.HasComponent<PrefabRef>(lane))
+                {
+                    Entity prefab = manager.GetComponentData<PrefabRef>(lane).m_Prefab;
+                    if (manager.Exists(prefab) && manager.HasComponent<CarLaneData>(prefab))
+                    {
+                        var carData = manager.GetComponentData<CarLaneData>(prefab);
+                        var methods = Game.Vehicles.VehicleUtils.GetPathMethods(car, carData);
+                        Entity pathfindPrefab = Entity.Null;
+                        bool hasPathfindCarData = false;
+                        if (manager.HasComponent<NetLaneData>(prefab))
+                        {
+                            pathfindPrefab = manager.GetComponentData<NetLaneData>(prefab).m_PathfindPrefab;
+                            hasPathfindCarData = manager.Exists(pathfindPrefab) && manager.HasComponent<PathfindCarData>(pathfindPrefab);
+                        }
+                        Mod.Log.Info($"[PATH-GRAPH] lane={lane} prefab={prefab} maxSize={carData.m_MaxSize} roadTypes={carData.m_RoadTypes} pathMethods={methods} pathfindPrefab={pathfindPrefab} hasPathfindCarData={hasPathfindCarData} master={manager.HasComponent<MasterLane>(lane)} slave={manager.HasComponent<SlaveLane>(lane)}");
+                    }
+                    else
+                        Mod.Log.Info($"[PATH-GRAPH] lane={lane} prefab={prefab} carLaneData=missing");
+                }
                 if (graph.GetEdge(lane, out var edge))
                 {
                     primary++;
