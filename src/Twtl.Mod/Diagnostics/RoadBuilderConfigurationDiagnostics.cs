@@ -41,6 +41,7 @@ namespace Twtl.Mod.Diagnostics
             bool closedHasLanes = false;
             bool closedFullyInspected = true;
             Mod.Log.Info($"[CONFIG] road={road.name} sections={config.Lanes.Count} captured={count} category={config.Category}; read-only source configuration");
+            RoadBuilderCrossSectionDiagnostics.Write(world, config);
             for (int i = 0; i < count; i++)
             {
                 var lane = config.Lanes[i];
