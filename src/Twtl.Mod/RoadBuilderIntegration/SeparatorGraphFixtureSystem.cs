@@ -11,7 +11,7 @@ using UnityEngine;
 namespace Twtl.Mod.RoadBuilderIntegration
 {
     /// <summary>
-    /// Disconnected graph experiment. A zero-width native traffic divider after
+    /// Disconnected graph experiment. A zero-width traffic divider after
     /// the center lane should end its contiguous master/slave group. The divider
     /// may also prevent lateral entry, so this is not a functional road design.
     /// </summary>
@@ -21,7 +21,7 @@ namespace Twtl.Mod.RoadBuilderIntegration
         public const string RoadId = "TWTL_SEPARATOR_GRAPH_TEST_ROAD_V1";
         private const string NativeSectionName = "Invisible Car Twoway Section 3";
         private const string NativeLaneName = "Invisible Car Twoway Lane 3";
-        private const string DividerSectionName = "Road Median 0";
+        private const string DividerPieceName = "TWTL ZERO-WIDTH BLOCKER GRAPH TEST";
         private const string SideLaneName = "Car Drive Section 3";
         private bool registered;
         private bool roadAttempted;
@@ -44,7 +44,6 @@ namespace Twtl.Mod.RoadBuilderIntegration
             }
             if (catalogue?.RoadGenerationData == null ||
                 !catalogue.NetSections.TryGetValue(NativeSectionName, out var native) ||
-                !catalogue.NetSections.TryGetValue(DividerSectionName, out var divider) ||
                 !catalogue.NetLanes.TryGetValue(NativeLaneName, out var expectedLane)) return;
 
             try
@@ -67,22 +66,16 @@ namespace Twtl.Mod.RoadBuilderIntegration
                     !car.m_Twoway || Math.Abs(car.m_Width - 3f) > 0.01f)
                     throw new InvalidOperationException("Native center is not the verified 3 m two-way lane.");
 
-                NetPiecePrefab? blockingPiece = null;
-                if (divider.m_Pieces != null)
-                {
-                    foreach (var info in divider.m_Pieces)
-                    {
-                        var piece = info.m_Piece;
-                        if (piece == null || Math.Abs(piece.m_Width) > 0.01f ||
-                            !piece.TryGet<NetDividerPiece>(out var marker) || !marker.m_BlockTraffic ||
-                            piece.TryGet<NetPieceLanes>(out var pieceLanes) &&
-                            pieceLanes.m_Lanes != null && pieceLanes.m_Lanes.Length != 0) continue;
-                        blockingPiece = piece;
-                        break;
-                    }
-                }
-                if (blockingPiece == null)
-                    throw new InvalidOperationException("No lane-free zero-width native traffic divider was found.");
+                // Road Median 0 has no qualifying zero-width BlockTraffic piece
+                // in the installed 1.6.4f1 assets. Create a lane-free virtual
+                // piece for this isolated graph experiment instead.
+                var blockingPiece = ScriptableObject.CreateInstance<NetPiecePrefab>();
+                blockingPiece.name = DividerPieceName;
+                blockingPiece.m_Width = 0f;
+                blockingPiece.AddOrGetComponent<NetDividerPiece>().m_BlockTraffic = true;
+                var prefabSystem = World.GetOrCreateSystemManaged<PrefabSystem>();
+                if (!prefabSystem.AddPrefab(blockingPiece))
+                    throw new InvalidOperationException("PrefabSystem rejected zero-width test divider.");
 
                 var section = ScriptableObject.CreateInstance<NetSectionPrefab>();
                 section.name = PrefabName;
@@ -101,10 +94,10 @@ namespace Twtl.Mod.RoadBuilderIntegration
                 laneInfo.RequireAny = RoadCategory.Road;
                 laneInfo.RequireNone = RoadCategory.NonRoad;
                 laneInfo.NoDirection = true;
-                if (!World.GetOrCreateSystemManaged<PrefabSystem>().AddPrefab(section))
+                if (!prefabSystem.AddPrefab(section))
                     throw new InvalidOperationException("PrefabSystem rejected separator graph section.");
                 registered = true;
-                Mod.Log.Warn($"[SEPARATOR GRAPH TEST] Registered opt-in center section with native zero-width blocker {blockingPiece.name}. Disconnected graph inspection only; blocker may prevent lateral entry.");
+                Mod.Log.Warn($"[SEPARATOR GRAPH TEST] Registered opt-in center section with virtual zero-width blocker {blockingPiece.name}. Disconnected graph inspection only; blocker may prevent lateral entry.");
             }
             catch (Exception error)
             {
