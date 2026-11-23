@@ -1,5 +1,9 @@
 # Research ledger
 
+## Installed CS2 1.6.4f1 routing check, 2026-11-22
+
+Private inspection of the installed `Game.Pathfind.PathUtils.GetCarDriveSpecification` implementation found that `Game.Net.CarLaneFlags.Twoway` adds `EdgeFlags.Backward` to a graph-owning car lane. `Game.Net.CarLaneFlags.Forbidden` contributes `PathfindCarData.m_ForbiddenCost` but does not remove the lane's forward graph edge. `Unsafe` with no track exception suppresses `EdgeFlags.AllowMiddle`, and `SideConnection` adds `EdgeFlags.SingleOnly`. These are observations from the owner's installed assembly, not public API promises or evidence that any combination enforces a turn-only shared corridor. The mod must prove an actual hard route restriction before admitting traffic. Decompiled implementation files remain under ignored `work/native` and are not committed.
+
 Inspected on 2026-11-06 using the connected GitHub source tools. Local git clones and SDK download failed because the configured cloud proxy refused connections; no proxy bypass was attempted. `research-sources.json` records immutable upstream commits and inspected file blobs. Third-party descriptions and code comments are evidence of those projects' intentions, not authoritative game semantics.
 
 ## Road Builder

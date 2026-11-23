@@ -55,7 +55,8 @@ namespace Twtl.Mod.Diagnostics
             bool leftHand = world.GetOrCreateSystemManaged<CityConfigurationSystem>().leftHandTraffic;
             var handedness = leftHand ? Handedness.Left : Handedness.Right;
             var result = RoadValidation.Configuration(strips, handedness);
-            Mod.Log.Info($"[CROSS-SECTION] road={config.ID} centerSections={centerCount} ordinarySections={strips.Count - centerCount} leftHandTraffic={leftHand} configurationStatus={result.Status} reasons={string.Join(" | ", result.Reasons)}; recognized layout only, runtime access, routing, overlaps and traffic safety unverified");
+            var readiness = RoadValidation.Runtime(result, RuntimeSafetyEvidence.Unknown);
+            Mod.Log.Info($"[CROSS-SECTION] road={config.ID} centerSections={centerCount} ordinarySections={strips.Count - centerCount} leftHandTraffic={leftHand} configurationStatus={result.Status} runtimeStatus={readiness.Status} reasons={string.Join(" | ", result.Reasons)}; recognized layout only, all runtime traffic checks unverified");
         }
     }
 }
