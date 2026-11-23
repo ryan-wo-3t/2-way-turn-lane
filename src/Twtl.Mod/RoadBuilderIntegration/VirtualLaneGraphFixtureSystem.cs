@@ -24,6 +24,8 @@ namespace Twtl.Mod.RoadBuilderIntegration
         private const string VirtualLaneName = "TWTL ZERO-WIDTH NON-ROAD LANE GRAPH TEST";
         private const string VirtualPieceName = "TWTL ZERO-WIDTH NON-ROAD PIECE GRAPH TEST";
         private const string SideLaneName = "Car Drive Section 3";
+        private const RoadAddons RequiredAddons = RoadAddons.HasUndergroundWaterPipes |
+            RoadAddons.HasUndergroundElectricityCable | RoadAddons.GeneratesZoningBlocks;
         private bool registered;
         private bool roadAttempted;
         private bool failed;
@@ -121,13 +123,34 @@ namespace Twtl.Mod.RoadBuilderIntegration
             {
                 var builder = World.GetExistingSystemManaged<RoadBuilderSystem>();
                 if (builder == null) throw new InvalidOperationException("Road Builder road system is unavailable.");
-                if (builder.Configurations.ContainsKey(RoadId)) return;
+                if (builder.Configurations.TryGetValue(RoadId, out var existing))
+                {
+                    var existingAddons = existing.Config?.Addons ?? 0;
+                    if ((existingAddons & RequiredAddons) != RequiredAddons)
+                        Mod.Log.Warn("[VIRTUAL LANE GRAPH TEST] Existing saved helper road lacks utility/zoning addons; leaving the saved configuration untouched.");
+                    return;
+                }
+                var generation = World.GetExistingSystemManaged<RoadBuilderGenerationDataSystem>()?.RoadGenerationData;
+                if (generation == null || generation.ZoneBlockPrefab == null)
+                    throw new InvalidOperationException("Road Builder zoning or generation data is unavailable.");
+                // These are the exact section keys used by Road Builder 0.8.0's
+                // underground water/electricity generation. Refuse the helper
+                // road if its utility dependencies are incomplete.
+                foreach (string name in new[]
+                {
+                    "Sewage Pipe Section 1.5", "Pipeline Spacing Section 1",
+                    "Ground Cable Section 1", "Water Pipe Section 1",
+                    "Stormwater Pipe Section 1.5"
+                })
+                    if (!generation.NetSectionPrefabs.ContainsKey(name))
+                        throw new InvalidOperationException("Road Builder utility section missing: " + name);
                 var config = new RoadConfig
                 {
                     ID = RoadId,
                     Name = "TWTL VIRTUAL-LANE GRAPH TEST - DISCONNECTED ONLY",
                     Version = RoadBuilderSerializeSystem.CURRENT_VERSION,
                     Category = RoadCategory.Road,
+                    Addons = RequiredAddons,
                     SpeedLimit = 80f,
                     ToolbarState = ShowInToolbarState.Show,
                     Lanes = new List<LaneConfig>
@@ -139,7 +162,7 @@ namespace Twtl.Mod.RoadBuilderIntegration
                 };
                 if (builder.AddPrefab(config) == null)
                     throw new InvalidOperationException("Road Builder rejected virtual-lane graph road.");
-                Mod.Log.Warn("[VIRTUAL LANE GRAPH TEST] Registered disconnected-only road. No car trial or traffic safeguards.");
+                Mod.Log.Warn("[VIRTUAL LANE GRAPH TEST] Registered disconnected-only road with Road Builder utility and zoning addons. Native utility continuity is not live-verified; no car trial or traffic safeguards.");
             }
             catch (Exception error)
             {
