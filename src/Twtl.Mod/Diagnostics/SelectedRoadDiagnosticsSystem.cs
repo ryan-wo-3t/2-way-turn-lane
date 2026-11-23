@@ -58,6 +58,8 @@ namespace Twtl.Mod.Diagnostics
                 PathNodeContinuityDiagnostics.Write(EntityManager, identities);
                 try { PathGraphDiagnostics.Write(World, EntityManager, identities); }
                 catch (Exception error) { Mod.Log.Error(error, "Read-only path graph capture failed; continuing native lane capture."); }
+                try { JunctionConnectionDiagnostics.Write(World, EntityManager, selected, identities); }
+                catch (Exception error) { Mod.Log.Error(error, "Read-only endpoint junction capture failed; continuing native lane capture."); }
                 int vehicleBudget = 32;
                 foreach (Entity lane in identities)
                 {
