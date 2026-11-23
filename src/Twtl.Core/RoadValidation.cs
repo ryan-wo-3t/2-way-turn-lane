@@ -30,6 +30,59 @@ namespace Twtl.Core
         { Status = status; Reasons = Array.AsReadOnly(reasons.ToArray()); }
     }
 
+    /// <summary>
+    /// A complete, explicitly named set of runtime gates. An adapter must supply
+    /// observed evidence for every gate; omitted or unknown evidence cannot
+    /// activate a corridor. Yes for tram conflicts means either verified safe
+    /// handling or a verified absence of tracks in this corridor.
+    /// </summary>
+    public sealed class RuntimeSafetyEvidence
+    {
+        public Evidence PhysicalTopology { get; }
+        public Evidence BidirectionalPathGraph { get; }
+        public Evidence TurnOnlyRouting { get; }
+        public Evidence OpposingConflictDetection { get; }
+        public Evidence EntryEnforcement { get; }
+        public Evidence OccupancyReconciliation { get; }
+        public Evidence SafeExitMerge { get; }
+        public Evidence IntersectionTransitions { get; }
+        public Evidence TramConflicts { get; }
+
+        public RuntimeSafetyEvidence(Evidence physicalTopology, Evidence bidirectionalPathGraph,
+            Evidence turnOnlyRouting, Evidence opposingConflictDetection, Evidence entryEnforcement,
+            Evidence occupancyReconciliation, Evidence safeExitMerge, Evidence intersectionTransitions,
+            Evidence tramConflicts)
+        {
+            Check(physicalTopology, nameof(physicalTopology));
+            Check(bidirectionalPathGraph, nameof(bidirectionalPathGraph));
+            Check(turnOnlyRouting, nameof(turnOnlyRouting));
+            Check(opposingConflictDetection, nameof(opposingConflictDetection));
+            Check(entryEnforcement, nameof(entryEnforcement));
+            Check(occupancyReconciliation, nameof(occupancyReconciliation));
+            Check(safeExitMerge, nameof(safeExitMerge));
+            Check(intersectionTransitions, nameof(intersectionTransitions));
+            Check(tramConflicts, nameof(tramConflicts));
+            PhysicalTopology = physicalTopology;
+            BidirectionalPathGraph = bidirectionalPathGraph;
+            TurnOnlyRouting = turnOnlyRouting;
+            OpposingConflictDetection = opposingConflictDetection;
+            EntryEnforcement = entryEnforcement;
+            OccupancyReconciliation = occupancyReconciliation;
+            SafeExitMerge = safeExitMerge;
+            IntersectionTransitions = intersectionTransitions;
+            TramConflicts = tramConflicts;
+        }
+
+        public static RuntimeSafetyEvidence Unknown => new RuntimeSafetyEvidence(
+            Evidence.Unknown, Evidence.Unknown, Evidence.Unknown, Evidence.Unknown, Evidence.Unknown,
+            Evidence.Unknown, Evidence.Unknown, Evidence.Unknown, Evidence.Unknown);
+
+        private static void Check(Evidence value, string name)
+        {
+            if (!Enum.IsDefined(typeof(Evidence), value)) throw new ArgumentOutOfRangeException(name);
+        }
+    }
+
     public static class RoadValidation
     {
         /// <summary>Strips ordered left to right looking along the segment's forward tangent.</summary>
@@ -71,15 +124,38 @@ namespace Twtl.Core
                 : new ValidationResult(ValidationStatus.Valid, new[] { "Cross-section is physically eligible; runtime verification is separate." });
         }
 
-        /// <summary>Unknown evidence never enables admissions. No traffic demand is required.</summary>
-        public static ValidationResult Runtime(ValidationResult configuration, params Evidence[] requiredChecks)
+        /// <summary>Every named gate must be verified before runtime activation.</summary>
+        public static ValidationResult Runtime(ValidationResult configuration, RuntimeSafetyEvidence evidence)
         {
+            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
+            if (evidence == null) throw new ArgumentNullException(nameof(evidence));
             if (configuration.Status == ValidationStatus.Invalid) return configuration;
-            if (requiredChecks.Any(x => x == Evidence.No))
-                return new ValidationResult(ValidationStatus.Invalid, new[] { "A required runtime safety or connection check failed." });
-            if (requiredChecks.Length == 0 || requiredChecks.Any(x => x != Evidence.Yes))
-                return new ValidationResult(ValidationStatus.Warning, new[] { "Runtime topology, routing, braking or occupancy evidence is incomplete." });
-            return new ValidationResult(ValidationStatus.Valid, new[] { "All supplied runtime checks verified; adapter owns evidence completeness." });
+
+            var checks = new[]
+            {
+                ("physical topology", evidence.PhysicalTopology),
+                ("bidirectional path graph", evidence.BidirectionalPathGraph),
+                ("turn-only routing", evidence.TurnOnlyRouting),
+                ("opposing conflict detection", evidence.OpposingConflictDetection),
+                ("entry enforcement", evidence.EntryEnforcement),
+                ("occupancy reconciliation", evidence.OccupancyReconciliation),
+                ("safe exit merge", evidence.SafeExitMerge),
+                ("intersection transitions", evidence.IntersectionTransitions),
+                ("tram conflict handling", evidence.TramConflicts)
+            };
+            var failed = checks.Where(check => check.Item2 == Evidence.No)
+                .Select(check => check.Item1).ToArray();
+            if (failed.Length != 0)
+                return new ValidationResult(ValidationStatus.Invalid,
+                    new[] { "Failed runtime checks: " + string.Join(", ", failed) + "." });
+            if (configuration.Status == ValidationStatus.Warning) return configuration;
+            var missing = checks.Where(check => check.Item2 == Evidence.Unknown)
+                .Select(check => check.Item1).ToArray();
+            if (missing.Length != 0)
+                return new ValidationResult(ValidationStatus.Warning,
+                    new[] { "Unverified runtime checks: " + string.Join(", ", missing) + "." });
+            return new ValidationResult(ValidationStatus.Valid,
+                new[] { "All required runtime checks verified for this corridor revision." });
         }
     }
 

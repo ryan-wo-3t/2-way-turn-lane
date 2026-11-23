@@ -10,6 +10,9 @@ internal static class Program
     private static int failed;
     private static readonly TwtlOptions Options = new TwtlOptions();
     private static readonly ValidationResult Verified = new ValidationResult(ValidationStatus.Valid, Array.Empty<string>());
+    private static readonly RuntimeSafetyEvidence AllVerified = new RuntimeSafetyEvidence(
+        Evidence.Yes, Evidence.Yes, Evidence.Yes, Evidence.Yes, Evidence.Yes,
+        Evidence.Yes, Evidence.Yes, Evidence.Yes, Evidence.Yes);
     private static void Assert(bool condition, string message = "Assertion failed")
     { if (!condition) throw new Exception(message); }
     private static void Throws<T>(Action action) where T : Exception
@@ -137,10 +140,29 @@ internal static class Program
         });
         Test("runtime failure dominates unknown, warning blocks activation", () =>
         {
-            Assert(RoadValidation.Runtime(Verified, Evidence.Unknown, Evidence.No).Status == ValidationStatus.Invalid);
+            var failedEvidence = new RuntimeSafetyEvidence(Evidence.Unknown, Evidence.Yes, Evidence.Yes,
+                Evidence.No, Evidence.Yes, Evidence.Yes, Evidence.Yes, Evidence.Yes, Evidence.Yes);
+            var failed = RoadValidation.Runtime(Verified, failedEvidence);
+            Assert(failed.Status == ValidationStatus.Invalid && failed.Reasons[0].Contains("opposing conflict"));
             var manager = new ReservationManager(Options, Handedness.Right);
-            manager.Register(1, 1, new Interval(0, 500), RoadValidation.Runtime(Verified), true);
+            manager.Register(1, 1, new Interval(0, 500), RoadValidation.Runtime(Verified, RuntimeSafetyEvidence.Unknown), true);
             Assert(!Grant(manager, Request(1)));
+        });
+        Test("complete runtime evidence cannot erase configuration warnings", () =>
+        {
+            Assert(RoadValidation.Runtime(Verified, AllVerified).Status == ValidationStatus.Valid);
+            var incomplete = new RuntimeSafetyEvidence(Evidence.Yes, Evidence.Yes, Evidence.Yes,
+                Evidence.Yes, Evidence.Yes, Evidence.Yes, Evidence.Yes, Evidence.Yes, Evidence.Unknown);
+            var result = RoadValidation.Runtime(Verified, incomplete);
+            Assert(result.Status == ValidationStatus.Warning && result.Reasons[0].Contains("tram conflict"));
+            var configWarning = new ValidationResult(ValidationStatus.Warning, new[] { "Crossable tram requires verification." });
+            Assert(RoadValidation.Runtime(configWarning, AllVerified).Status == ValidationStatus.Warning);
+            Assert(RoadValidation.Runtime(configWarning, new RuntimeSafetyEvidence(Evidence.Yes,
+                Evidence.Yes, Evidence.Yes, Evidence.No, Evidence.Yes, Evidence.Yes, Evidence.Yes,
+                Evidence.Yes, Evidence.Yes)).Status == ValidationStatus.Invalid);
+            Throws<ArgumentOutOfRangeException>(() => new RuntimeSafetyEvidence((Evidence)17,
+                Evidence.Yes, Evidence.Yes, Evidence.Yes, Evidence.Yes, Evidence.Yes, Evidence.Yes,
+                Evidence.Yes, Evidence.Yes));
         });
         Test("occupancy reconciliation required even after valid checks", () =>
         {

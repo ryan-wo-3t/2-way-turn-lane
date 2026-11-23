@@ -1,5 +1,11 @@
 # Implementation and verification report
 
+## Safety-gate revision, 2026-11-22
+
+The core runtime validator now requires explicit physical-topology, bidirectional-graph, turn-only-routing, opposing-conflict, entry-enforcement, occupancy-reconciliation, safe-exit, intersection-transition and tram-conflict evidence. Unknown evidence blocks activation, a negative check invalidates it, and a configuration warning cannot be promoted to Valid by runtime evidence. The core suite passes **37/37**. The mod builds and passes official Unity IL/Burst postprocessing against the installed CS2 **1.6.4f1** and Road Builder **0.8.0.0** assemblies with **0 warnings / 0 errors**. This revision is staged locally, not deployed to CS2.
+
+A preceding disposable-city attempt connected the virtual-lane graph fixture to ordinary roads, but a one-shot capture found zero occupants on both center lanes. The helper road had no verified utility continuity; homes beyond it lacked power, water and sewage. This does not establish vehicle routing or safety and exceeded the fixture's disconnected-only test scope. Connected traffic testing is deferred until the missing routing and conflict controls exist. See [LOCAL_VERIFICATION.md](LOCAL_VERIFICATION.md) for the capture details.
+
 ## Windows continuation, 2026-11-10
 
 Integrated specification commit `1971f05` without discarding local work and read the full ORIGINAL_SPECIFICATION.md. Verified the owner's installed CS2 **1.6.4f1**, official Unity/toolchain and Road Builder **0.8.0.0**. Commit `6339581` repairs and verifies the complete native build pipeline, including official IL/Burst postprocessing and correct staging order. All outputs remain ignored and outside GitHub.
