@@ -20,6 +20,8 @@ A second live lookup at `17:50:26` resolved the sampled center `Twoway` lane and
 
 The follow-up live capture at `17:59:30` found that the sampled center `Twoway` slave and adjacent ordinary slave share group `1` and `masterIndex=0`, with sub-indices `1` and `2`. Their master has group `1`, spans indices `1` to `2`, and has a forward-only graph edge. The opposite ordinary lane has its own forward edge. This maps the fixture's lane grouping but still does not show a reverse route or safe traffic. The game was exited without saving the disposable city.
 
+The installed `PathUtils.GetCarDriveSpecification` adds `EdgeFlags.Backward` when the graph-owning car lane has `CarLaneFlags.Twoway`. The sampled master lacks that flag. The current fixture must not advance to a car trial as a purported bidirectional corridor; the next representation experiment needs a graph-owning reverse direction. No general engine limitation is claimed from this isolated sample.
+
 Date: 2026-11-06. Repository: `ryan-wo-3t/2-way-turn-lane`. Branch: `codex/twtl-foundation`. Review: [draft PR #1](https://github.com/ryan-wo-3t/2-way-turn-lane/pull/1). Original base: `b79d2016ffaae0837170fd3e2a4cf491870a6b2f`. Original Ryan Gordon MIT LICENSE retained verbatim.
 
 ## Outcome and completion boundary
