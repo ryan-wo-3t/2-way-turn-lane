@@ -16,6 +16,8 @@ An optional native section generator was implemented behind a default-off settin
 
 A further live read-only pathfinder lookup at `17:39:23` found primary and secondary graph edges for four ordinary car lanes, but neither of the two native center lanes nor two adjacent ordinary lanes returned an edge from the sampled data container. This does not prove those lanes are unusable: the graph representation, worker choice and disconnected-road effect still need investigation. It does prevent a bidirectional routing claim. See [LOCAL_VERIFICATION.md](LOCAL_VERIFICATION.md) for the exact observation.
 
+A second live lookup at `17:50:26` resolved the sampled center `Twoway` lane and an adjacent ordinary lane as `SlaveLane`s. Installed 1.6.4f1 `LanesModifiedSystem/AddPathEdgeJob` and `UpdatePathEdgeJob` explicitly skip slave-lane chunks, which explains their absent direct edges. The sampled `MasterLane` used the center prefab but had no `CarLaneFlags.Twoway` and its graph edge was forward only. All four sampled car prefabs had `Road, Bicycle` path methods and valid pathfind-car data. The diagnostic now records master/slave group and index fields for a follow-up mapping test; its official build passed with 0 warnings/errors. Neither graph reachability through the center nor car conflict safety has been demonstrated.
+
 Date: 2026-11-06. Repository: `ryan-wo-3t/2-way-turn-lane`. Branch: `codex/twtl-foundation`. Review: [draft PR #1](https://github.com/ryan-wo-3t/2-way-turn-lane/pull/1). Original base: `b79d2016ffaae0837170fd3e2a4cf491870a6b2f`. Original Ryan Gordon MIT LICENSE retained verbatim.
 
 ## Outcome and completion boundary

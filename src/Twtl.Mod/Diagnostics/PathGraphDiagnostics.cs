@@ -23,12 +23,27 @@ namespace Twtl.Mod.Diagnostics
             int inspected = 0;
             int primary = 0;
             int both = 0;
+            int slaveCount = 0;
+            int twoWaySlaveCount = 0;
             foreach (Entity lane in lanes)
             {
                 if (!manager.Exists(lane) || !manager.HasComponent<Game.Net.CarLane>(lane)) continue;
                 inspected++;
                 var car = manager.GetComponentData<Game.Net.CarLane>(lane);
                 bool twoway = (car.m_Flags & CarLaneFlags.Twoway) != 0;
+                bool slave = manager.HasComponent<SlaveLane>(lane);
+                if (manager.HasComponent<MasterLane>(lane))
+                {
+                    var masterData = manager.GetComponentData<MasterLane>(lane);
+                    Mod.Log.Info($"[PATH-GRAPH] lane={lane} masterGroup={masterData.m_Group} masterFlags={masterData.m_Flags} minIndex={masterData.m_MinIndex} maxIndex={masterData.m_MaxIndex}");
+                }
+                if (slave)
+                {
+                    slaveCount++;
+                    if (twoway) twoWaySlaveCount++;
+                    var slaveData = manager.GetComponentData<SlaveLane>(lane);
+                    Mod.Log.Info($"[PATH-GRAPH] lane={lane} slaveGroup={slaveData.m_Group} slaveFlags={slaveData.m_Flags} minIndex={slaveData.m_MinIndex} maxIndex={slaveData.m_MaxIndex} subIndex={slaveData.m_SubIndex} masterIndex={slaveData.m_MasterIndex}");
+                }
                 if (manager.HasComponent<PrefabRef>(lane))
                 {
                     Entity prefab = manager.GetComponentData<PrefabRef>(lane).m_Prefab;
@@ -43,7 +58,7 @@ namespace Twtl.Mod.Diagnostics
                             pathfindPrefab = manager.GetComponentData<NetLaneData>(prefab).m_PathfindPrefab;
                             hasPathfindCarData = manager.Exists(pathfindPrefab) && manager.HasComponent<PathfindCarData>(pathfindPrefab);
                         }
-                        Mod.Log.Info($"[PATH-GRAPH] lane={lane} prefab={prefab} maxSize={carData.m_MaxSize} roadTypes={carData.m_RoadTypes} pathMethods={methods} pathfindPrefab={pathfindPrefab} hasPathfindCarData={hasPathfindCarData} master={manager.HasComponent<MasterLane>(lane)} slave={manager.HasComponent<SlaveLane>(lane)}");
+                        Mod.Log.Info($"[PATH-GRAPH] lane={lane} prefab={prefab} maxSize={carData.m_MaxSize} roadTypes={carData.m_RoadTypes} pathMethods={methods} pathfindPrefab={pathfindPrefab} hasPathfindCarData={hasPathfindCarData} master={manager.HasComponent<MasterLane>(lane)} slave={slave}");
                     }
                     else
                         Mod.Log.Info($"[PATH-GRAPH] lane={lane} prefab={prefab} carLaneData=missing");
@@ -58,7 +73,7 @@ namespace Twtl.Mod.Diagnostics
                     Mod.Log.Info($"[PATH-GRAPH] lane={lane} twoway={twoway} edgeIndex={edge.m_Index} flags={flags} forward={forward} backward={backward}");
                 }
                 else
-                    Mod.Log.Info($"[PATH-GRAPH] lane={lane} twoway={twoway} primaryEdge=missing; graph reachability UNKNOWN");
+                    Mod.Log.Info($"[PATH-GRAPH] lane={lane} twoway={twoway} primaryEdge=missing slave={slave}; installed LanesModifiedSystem skips SlaveLane chunks, so a missing direct edge is expected for a slave; routing via its master and endpoints UNKNOWN");
 
                 if (graph.GetSecondaryEdge(lane, out var secondary))
                 {
@@ -66,7 +81,7 @@ namespace Twtl.Mod.Diagnostics
                     Mod.Log.Info($"[PATH-GRAPH] lane={lane} secondaryEdgeIndex={secondary.m_Index} flags={flags}");
                 }
             }
-            Mod.Log.Info($"[PATH-GRAPH] inspectedCarLanes={inspected} primaryEdges={primary} twoWayEdgesWithBothDirectionFlags={both}; endpoint routing and traffic safety UNKNOWN");
+            Mod.Log.Info($"[PATH-GRAPH] inspectedCarLanes={inspected} slaveLanes={slaveCount} twoWaySlaves={twoWaySlaveCount} primaryEdges={primary} twoWayEdgesWithBothDirectionFlags={both}; endpoint routing and traffic safety UNKNOWN");
         }
     }
 }
