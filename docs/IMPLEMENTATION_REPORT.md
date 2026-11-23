@@ -22,6 +22,8 @@ The follow-up live capture at `17:59:30` found that the sampled center `Twoway` 
 
 The installed `PathUtils.GetCarDriveSpecification` adds `EdgeFlags.Backward` when the graph-owning car lane has `CarLaneFlags.Twoway`. The sampled master lacks that flag. The current fixture must not advance to a car trial as a purported bidirectional corridor; the next representation experiment needs a graph-owning reverse direction. No general engine limitation is claimed from this isolated sample.
 
+A second default-off Road Builder fixture now uses the same verified native two-way section with `RoadBuilderLaneInfo.Median=true`, which Road Builder emits as `NetSectionInfo.m_Median`. It is a disconnected-only experiment to see whether the center stops sharing an ordinary lane's graph master. The code passed the installed 1.6.4f1 / Road Builder 0.8.0.0 official C# and IL/Burst build with 0 warnings/errors. Its registration, generated graph and car behavior are not yet runtime-tested.
+
 Date: 2026-11-06. Repository: `ryan-wo-3t/2-way-turn-lane`. Branch: `codex/twtl-foundation`. Review: [draft PR #1](https://github.com/ryan-wo-3t/2-way-turn-lane/pull/1). Original base: `b79d2016ffaae0837170fd3e2a4cf491870a6b2f`. Original Ryan Gordon MIT LICENSE retained verbatim.
 
 ## Outcome and completion boundary

@@ -16,6 +16,7 @@ namespace Twtl.Mod
         internal static Settings? Options;
         private ResearchLaneSystem? research;
         private NativeFixtureSystem? nativeFixture;
+        private MedianGraphFixtureSystem? medianGraphFixture;
         private SelectedRoadDiagnosticsSystem? diagnostics;
 
         public void OnLoad(UpdateSystem updateSystem)
@@ -32,9 +33,11 @@ namespace Twtl.Mod
             // same-frame PrefabUpdate lets Road Builder discover them before marker cleanup.
             updateSystem.UpdateBefore<ResearchLaneSystem, PrefabSystem>(SystemUpdatePhase.MainLoop);
             updateSystem.UpdateBefore<NativeFixtureSystem, PrefabSystem>(SystemUpdatePhase.MainLoop);
+            updateSystem.UpdateBefore<MedianGraphFixtureSystem, PrefabSystem>(SystemUpdatePhase.MainLoop);
             updateSystem.UpdateAt<SelectedRoadDiagnosticsSystem>(SystemUpdatePhase.UIUpdate);
             research = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<ResearchLaneSystem>();
             nativeFixture = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<NativeFixtureSystem>();
+            medianGraphFixture = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<MedianGraphFixtureSystem>();
             diagnostics = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<SelectedRoadDiagnosticsSystem>();
         }
 
@@ -42,6 +45,7 @@ namespace Twtl.Mod
         {
             if (research != null) research.Enabled = false;
             if (nativeFixture != null) nativeFixture.Enabled = false;
+            if (medianGraphFixture != null) medianGraphFixture.Enabled = false;
             if (diagnostics != null) diagnostics.Enabled = false;
             Options?.UnregisterInOptionsUI();
             Options = null;
