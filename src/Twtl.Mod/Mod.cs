@@ -17,6 +17,7 @@ namespace Twtl.Mod
         private ResearchLaneSystem? research;
         private NativeFixtureSystem? nativeFixture;
         private MedianGraphFixtureSystem? medianGraphFixture;
+        private SeparatorGraphFixtureSystem? separatorGraphFixture;
         private SelectedRoadDiagnosticsSystem? diagnostics;
 
         public void OnLoad(UpdateSystem updateSystem)
@@ -34,10 +35,12 @@ namespace Twtl.Mod
             updateSystem.UpdateBefore<ResearchLaneSystem, PrefabSystem>(SystemUpdatePhase.MainLoop);
             updateSystem.UpdateBefore<NativeFixtureSystem, PrefabSystem>(SystemUpdatePhase.MainLoop);
             updateSystem.UpdateBefore<MedianGraphFixtureSystem, PrefabSystem>(SystemUpdatePhase.MainLoop);
+            updateSystem.UpdateBefore<SeparatorGraphFixtureSystem, PrefabSystem>(SystemUpdatePhase.MainLoop);
             updateSystem.UpdateAt<SelectedRoadDiagnosticsSystem>(SystemUpdatePhase.UIUpdate);
             research = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<ResearchLaneSystem>();
             nativeFixture = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<NativeFixtureSystem>();
             medianGraphFixture = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<MedianGraphFixtureSystem>();
+            separatorGraphFixture = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<SeparatorGraphFixtureSystem>();
             diagnostics = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<SelectedRoadDiagnosticsSystem>();
         }
 
@@ -46,6 +49,7 @@ namespace Twtl.Mod
             if (research != null) research.Enabled = false;
             if (nativeFixture != null) nativeFixture.Enabled = false;
             if (medianGraphFixture != null) medianGraphFixture.Enabled = false;
+            if (separatorGraphFixture != null) separatorGraphFixture.Enabled = false;
             if (diagnostics != null) diagnostics.Enabled = false;
             Options?.UnregisterInOptionsUI();
             Options = null;
