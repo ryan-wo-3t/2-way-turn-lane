@@ -21,6 +21,7 @@ namespace Twtl.Mod
         private VirtualLaneGraphFixtureSystem? virtualLaneGraphFixture;
         private ExperimentalLaneClosureSystem? experimentalLaneClosure;
         private SelectedRoadDiagnosticsSystem? diagnostics;
+        private PrototypeTrafficMonitorSystem? trafficMonitor;
 
         public void OnLoad(UpdateSystem updateSystem)
         {
@@ -42,6 +43,7 @@ namespace Twtl.Mod
             updateSystem.UpdateAfter<ExperimentalLaneClosureSystem, Game.Pathfind.LaneDataSystem>(SystemUpdatePhase.ModificationEnd);
             updateSystem.UpdateBefore<ExperimentalLaneClosureSystem, Game.Pathfind.LanesModifiedSystem>(SystemUpdatePhase.ModificationEnd);
             updateSystem.UpdateAt<SelectedRoadDiagnosticsSystem>(SystemUpdatePhase.UIUpdate);
+            updateSystem.UpdateAt<PrototypeTrafficMonitorSystem>(SystemUpdatePhase.UIUpdate);
             research = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<ResearchLaneSystem>();
             nativeFixture = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<NativeFixtureSystem>();
             medianGraphFixture = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<MedianGraphFixtureSystem>();
@@ -49,6 +51,7 @@ namespace Twtl.Mod
             virtualLaneGraphFixture = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<VirtualLaneGraphFixtureSystem>();
             experimentalLaneClosure = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<ExperimentalLaneClosureSystem>();
             diagnostics = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<SelectedRoadDiagnosticsSystem>();
+            trafficMonitor = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<PrototypeTrafficMonitorSystem>();
         }
 
         public void OnDispose()
@@ -60,6 +63,7 @@ namespace Twtl.Mod
             if (virtualLaneGraphFixture != null) virtualLaneGraphFixture.Enabled = false;
             if (experimentalLaneClosure != null) experimentalLaneClosure.Enabled = false;
             if (diagnostics != null) diagnostics.Enabled = false;
+            if (trafficMonitor != null) trafficMonitor.Enabled = false;
             Options?.UnregisterInOptionsUI();
             Options = null;
             // No traffic writes, navigation patches or transient reservations exist in this build.

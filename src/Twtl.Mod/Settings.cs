@@ -24,7 +24,9 @@ namespace Twtl.Mod
         public bool EnableDrivablePrototype { get; set; }
         [SettingsUISection("Research", "Tools")]
         public bool CaptureSelectedRoad { get; set; }
-        public override void SetDefaults() { ShowClosedResearchLane = false; ShowNativeFixture = false; ShowMedianGraphFixture = false; ShowSeparatorGraphFixture = false; ShowVirtualLaneGraphFixture = false; EnableDrivablePrototype = false; CaptureSelectedRoad = false; }
+        [SettingsUISection("Research", "Tools")]
+        public bool MonitorPrototypeTraffic { get; set; }
+        public override void SetDefaults() { ShowClosedResearchLane = false; ShowNativeFixture = false; ShowMedianGraphFixture = false; ShowSeparatorGraphFixture = false; ShowVirtualLaneGraphFixture = false; EnableDrivablePrototype = false; CaptureSelectedRoad = false; MonitorPrototypeTraffic = false; }
     }
 
     internal sealed class EnglishLocale : IDictionarySource
@@ -51,7 +53,9 @@ namespace Twtl.Mod
                 [settings.GetOptionLabelLocaleID(nameof(Settings.EnableDrivablePrototype))] = "Enable drivable prototype in test city",
                 [settings.GetOptionDescLocaleID(nameof(Settings.EnableDrivablePrototype))] = "Adds a five-lane Road Builder road with four travel lanes and a shared center open to cars. Turn-only routing and opposing-car safety are NOT implemented. Use only in a disposable test city; do not save it into a valued city. Turning this off closes its center lanes again.",
                 [settings.GetOptionLabelLocaleID(nameof(Settings.CaptureSelectedRoad))] = "Capture road and safety probe once",
-                [settings.GetOptionDescLocaleID(nameof(Settings.CaptureSelectedRoad))] = "Runs one-time read-only center-lane graph, route and vehicle-turn captures. Select a road first for extra lane geometry and vehicle details. Automatically resets; no traffic is modified."
+                [settings.GetOptionDescLocaleID(nameof(Settings.CaptureSelectedRoad))] = "Runs one-time read-only center-lane graph, route and vehicle-turn captures. Select a road first for extra lane geometry and vehicle details. Automatically resets; no traffic is modified.",
+                [settings.GetOptionLabelLocaleID(nameof(Settings.MonitorPrototypeTraffic))] = "Sample prototype car traffic for two minutes",
+                [settings.GetOptionDescLocaleID(nameof(Settings.MonitorPrototypeTraffic))] = "Select the V3 sidewalk prototype in Road Builder first. Counts actual cars on its ordinary and shared center lanes once per second for two minutes. Logs center entries and nearby route data. Automatically resets; no traffic is modified."
             };
         }
         public void Unload() { }
