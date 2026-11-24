@@ -26,6 +26,8 @@ namespace Twtl.Mod.Diagnostics
             {
                 try { PathGraphDiagnostics.WriteCandidateBlockages(World, EntityManager); }
                 catch (Exception error) { Mod.Log.Error(error, "Read-only global blockage capture failed; continuing selected-road capture."); }
+                try { SyntheticPathDiagnostics.WriteClosedLaneProbe(World, EntityManager); }
+                catch (Exception error) { Mod.Log.Error(error, "Read-only blocked-lane route query failed; continuing selected-road capture."); }
                 Entity selected = World.GetOrCreateSystemManaged<SelectedInfoUISystem>().selectedEntity;
                 string selectionSource = "SelectedInfoUISystem";
                 if (selected != Entity.Null && EntityManager.Exists(selected) &&
@@ -56,7 +58,7 @@ namespace Twtl.Mod.Diagnostics
                     }
                 }
                 if (selected == Entity.Null || !EntityManager.Exists(selected) || !EntityManager.HasBuffer<SubLane>(selected))
-                { Mod.Log.Warn("[CAPTURE] Select a road segment with SubLane data in the game info panel or Road Builder editor first."); return; }
+                { Mod.Log.Info("[CAPTURE] Global center-lane checks completed. Select a road segment in the info panel or Road Builder editor for detailed road capture."); return; }
                 bool leftHand = World.GetOrCreateSystemManaged<CityConfigurationSystem>().leftHandTraffic;
                 uint frame = World.GetOrCreateSystemManaged<SimulationSystem>().frameIndex;
                 Mod.Log.Info($"[CAPTURE] source={selectionSource} owner={selected} frame={frame} leftHandTraffic={leftHand}");

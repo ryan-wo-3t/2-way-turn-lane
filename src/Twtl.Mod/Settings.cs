@@ -46,8 +46,8 @@ namespace Twtl.Mod
                 [settings.GetOptionDescLocaleID(nameof(Settings.ShowSeparatorGraphFixture))] = "Adds a disconnected road with a zero-width traffic divider after the center lane. Tests path grouping only; the divider may block lane entry. No car traffic. Restart to remove it.",
                 [settings.GetOptionLabelLocaleID(nameof(Settings.ShowVirtualLaneGraphFixture))] = "Expose virtual-lane graph test",
                 [settings.GetOptionDescLocaleID(nameof(Settings.ShowVirtualLaneGraphFixture))] = "Adds a disconnected road with a zero-width non-road lane after the center. Tests path grouping without a traffic divider. Lateral access and safety are unknown. No car traffic. Restart to remove it.",
-                [settings.GetOptionLabelLocaleID(nameof(Settings.CaptureSelectedRoad))] = "Capture selected road once",
-                [settings.GetOptionDescLocaleID(nameof(Settings.CaptureSelectedRoad))] = "Select a road first, then enable this to log its lane geometry, overlaps and occupants. Automatically resets; no traffic is modified."
+                [settings.GetOptionLabelLocaleID(nameof(Settings.CaptureSelectedRoad))] = "Capture road and safety probe once",
+                [settings.GetOptionDescLocaleID(nameof(Settings.CaptureSelectedRoad))] = "Runs a one-time read-only center-lane graph and route check. Select a road first for extra lane geometry and vehicle details. Automatically resets; no traffic is modified."
             };
         }
         public void Unload() { }
