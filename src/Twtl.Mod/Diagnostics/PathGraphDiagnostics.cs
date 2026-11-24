@@ -20,16 +20,23 @@ namespace Twtl.Mod.Diagnostics
 
             var graph = queue.GetDataContainer(out var writeHandle);
             writeHandle.Complete();
+            var graphData = graph.GetReadOnlyData();
             int inspected = 0;
             int primary = 0;
             int both = 0;
             int slaveCount = 0;
             int twoWaySlaveCount = 0;
+            int fullyBlockedLanes = 0;
+            int fullyBlockedEdges = 0;
+            int fullyBlockedSecondaryEdges = 0;
+            int blockageMismatch = 0;
             foreach (Entity lane in lanes)
             {
                 if (!manager.Exists(lane) || !manager.HasComponent<Game.Net.CarLane>(lane)) continue;
                 inspected++;
                 var car = manager.GetComponentData<Game.Net.CarLane>(lane);
+                bool laneBlocked = car.m_BlockageStart == 0 && car.m_BlockageEnd == byte.MaxValue;
+                if (laneBlocked) fullyBlockedLanes++;
                 bool twoway = (car.m_Flags & CarLaneFlags.Twoway) != 0;
                 bool slave = manager.HasComponent<SlaveLane>(lane);
                 if (manager.HasComponent<MasterLane>(lane))
@@ -67,10 +74,17 @@ namespace Twtl.Mod.Diagnostics
                 {
                     primary++;
                     EdgeFlags flags = graph.GetFlags(edge);
+                    var spec = graphData.GetEdge(edge).m_Specification;
+                    bool graphBlocked = (spec.m_Rules & RuleFlags.HasBlockage) != 0 &&
+                        spec.m_BlockageStart == 0 && spec.m_BlockageEnd == byte.MaxValue;
+                    if (graphBlocked) fullyBlockedEdges++;
+                    if (laneBlocked != graphBlocked) blockageMismatch++;
                     bool forward = (flags & EdgeFlags.Forward) != 0;
                     bool backward = (flags & EdgeFlags.Backward) != 0;
                     if (twoway && forward && backward) both++;
                     Mod.Log.Info($"[PATH-GRAPH] lane={lane} twoway={twoway} edgeIndex={edge.m_Index} flags={flags} forward={forward} backward={backward}");
+                    if (twoway || laneBlocked || graphBlocked)
+                        Mod.Log.Info($"[PATH-GRAPH] lane={lane} laneBlockage={car.m_BlockageStart}..{car.m_BlockageEnd} graphHasBlockage={(spec.m_Rules & RuleFlags.HasBlockage) != 0} graphBlockage={spec.m_BlockageStart}..{spec.m_BlockageEnd} fullBlockageMatches={laneBlocked && graphBlocked}");
                 }
                 else
                     Mod.Log.Info($"[PATH-GRAPH] lane={lane} twoway={twoway} primaryEdge=missing slave={slave}; installed LanesModifiedSystem skips SlaveLane chunks, so a missing direct edge is expected for a slave; routing via its master and endpoints UNKNOWN");
@@ -78,10 +92,17 @@ namespace Twtl.Mod.Diagnostics
                 if (graph.GetSecondaryEdge(lane, out var secondary))
                 {
                     EdgeFlags flags = graph.GetFlags(secondary);
+                    var spec = graphData.GetEdge(secondary).m_Specification;
+                    bool graphBlocked = (spec.m_Rules & RuleFlags.HasBlockage) != 0 &&
+                        spec.m_BlockageStart == 0 && spec.m_BlockageEnd == byte.MaxValue;
+                    if (graphBlocked) fullyBlockedSecondaryEdges++;
+                    if (laneBlocked != graphBlocked) blockageMismatch++;
                     Mod.Log.Info($"[PATH-GRAPH] lane={lane} secondaryEdgeIndex={secondary.m_Index} flags={flags}");
+                    if (twoway || laneBlocked || graphBlocked)
+                        Mod.Log.Info($"[PATH-GRAPH] lane={lane} secondaryLaneBlockage={car.m_BlockageStart}..{car.m_BlockageEnd} secondaryGraphHasBlockage={(spec.m_Rules & RuleFlags.HasBlockage) != 0} secondaryGraphBlockage={spec.m_BlockageStart}..{spec.m_BlockageEnd} fullBlockageMatches={laneBlocked && graphBlocked}");
                 }
             }
-            Mod.Log.Info($"[PATH-GRAPH] inspectedCarLanes={inspected} slaveLanes={slaveCount} twoWaySlaves={twoWaySlaveCount} primaryEdges={primary} twoWayEdgesWithBothDirectionFlags={both}; endpoint routing and traffic safety UNKNOWN");
+            Mod.Log.Info($"[PATH-GRAPH] inspectedCarLanes={inspected} slaveLanes={slaveCount} twoWaySlaves={twoWaySlaveCount} primaryEdges={primary} twoWayEdgesWithBothDirectionFlags={both} fullyBlockedLanes={fullyBlockedLanes} fullyBlockedPrimaryEdges={fullyBlockedEdges} fullyBlockedSecondaryEdges={fullyBlockedSecondaryEdges} blockageMismatch={blockageMismatch}; endpoint routing and traffic safety UNKNOWN");
         }
     }
 }
