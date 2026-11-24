@@ -26,6 +26,7 @@ namespace Twtl.Mod.Diagnostics
         private readonly HashSet<Entity> seenCenterCars = new HashSet<Entity>();
         private readonly HashSet<Entity> currentlyOnCenter = new HashSet<Entity>();
         private readonly HashSet<Entity> nextOnCenter = new HashSet<Entity>();
+        private readonly Dictionary<Entity, CenterVisit> centerVisits = new Dictionary<Entity, CenterVisit>();
         private Entity owner;
         private DateTime started;
         private DateTime nextSample;
@@ -33,7 +34,34 @@ namespace Twtl.Mod.Diagnostics
         private int ordinaryCarFrames;
         private int centerCarFrames;
         private int centerEntries;
+        private int opposingSamples;
         private bool running;
+
+        private sealed class CenterVisit
+        {
+            public float First;
+            public float Last;
+            public float Min;
+            public float Max;
+            public int Samples;
+            public int Direction;
+
+            public CenterVisit(float position)
+            {
+                First = Last = Min = Max = position;
+            }
+
+            public void Observe(float position)
+            {
+                float change = position - Last;
+                if (change > 0.001f) Direction = 1;
+                else if (change < -0.001f) Direction = -1;
+                Last = position;
+                Min = Math.Min(Min, position);
+                Max = Math.Max(Max, position);
+                Samples++;
+            }
+        }
 
         protected override void OnUpdate()
         {
@@ -76,7 +104,8 @@ namespace Twtl.Mod.Diagnostics
             seenCenterCars.Clear();
             currentlyOnCenter.Clear();
             nextOnCenter.Clear();
-            samples = ordinaryCarFrames = centerCarFrames = centerEntries = 0;
+            centerVisits.Clear();
+            samples = ordinaryCarFrames = centerCarFrames = centerEntries = opposingSamples = 0;
             var subLanes = EntityManager.GetBuffer<SubLane>(owner, true);
             for (int i = 0; i < subLanes.Length; i++)
             {
@@ -101,6 +130,8 @@ namespace Twtl.Mod.Diagnostics
             nextOnCenter.Clear();
             int ordinary = 0;
             int center = 0;
+            int forwardCenter = 0;
+            int backwardCenter = 0;
             using (var query = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<CarCurrentLane>()))
             using (var cars = query.ToEntityArray(Allocator.Temp))
             {
@@ -118,11 +149,33 @@ namespace Twtl.Mod.Diagnostics
                         center++;
                         seenCenterCars.Add(vehicle);
                         nextOnCenter.Add(vehicle);
+                        float position = current.m_CurvePosition.x;
+                        if (!centerVisits.TryGetValue(vehicle, out var visit))
+                        {
+                            visit = new CenterVisit(position);
+                            centerVisits.Add(vehicle, visit);
+                        }
+                        visit.Observe(position);
+                        if (visit.Direction > 0) forwardCenter++;
+                        else if (visit.Direction < 0) backwardCenter++;
                         if (currentlyOnCenter.Contains(vehicle)) continue;
                         centerEntries++;
                         Mod.Log.Info($"[TRAFFIC-MONITOR] centerEntry vehicle={vehicle} lane={current.m_Lane} curvePosition={current.m_CurvePosition.x:F3} navigation={DescribeNavigation(vehicle)}; intent is observational, not turn authorization.");
                     }
                 }
+            }
+            foreach (Entity vehicle in currentlyOnCenter)
+            {
+                if (nextOnCenter.Contains(vehicle) || !centerVisits.TryGetValue(vehicle, out var visit)) continue;
+                string exitLane = EntityManager.Exists(vehicle) && EntityManager.HasComponent<CarCurrentLane>(vehicle)
+                    ? EntityManager.GetComponentData<CarCurrentLane>(vehicle).m_Lane.ToString() : "despawned";
+                Mod.Log.Info($"[TRAFFIC-MONITOR] centerExit vehicle={vehicle} entry={visit.First:F3} exit={visit.Last:F3} range={visit.Min:F3}..{visit.Max:F3} direction={visit.Direction} observedSeconds={visit.Samples} nextLane={exitLane}; route purpose unverified.");
+                centerVisits.Remove(vehicle);
+            }
+            if (forwardCenter > 0 && backwardCenter > 0)
+            {
+                opposingSamples++;
+                Mod.Log.Warn($"[TRAFFIC-MONITOR] opposingOccupancy sample={samples + 1} forward={forwardCenter} backward={backwardCenter}; simultaneous opposite movement observed, braking and separation unverified.");
             }
             samples++;
             ordinaryCarFrames += ordinary;
@@ -148,7 +201,7 @@ namespace Twtl.Mod.Diagnostics
         {
             if (!running) return;
             running = false;
-            Mod.Log.Info($"[TRAFFIC-MONITOR] Finished reason={reason} owner={owner} samples={samples} ordinaryCarFrames={ordinaryCarFrames} centerCarFrames={centerCarFrames} uniqueOrdinaryCars={seenOrdinaryCars.Count} uniqueCenterCars={seenCenterCars.Count} centerEntries={centerEntries}; no turn-only or conflict-safety claim.");
+            Mod.Log.Info($"[TRAFFIC-MONITOR] Finished reason={reason} owner={owner} samples={samples} ordinaryCarFrames={ordinaryCarFrames} centerCarFrames={centerCarFrames} uniqueOrdinaryCars={seenOrdinaryCars.Count} uniqueCenterCars={seenCenterCars.Count} centerEntries={centerEntries} opposingSamples={opposingSamples} centerStillObserved={centerVisits.Count}; no turn-only or conflict-safety claim.");
         }
     }
 }
