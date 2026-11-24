@@ -1,12 +1,73 @@
+using Game.Common;
 using Game.Net;
 using Game.Pathfind;
 using Game.Prefabs;
+using Unity.Collections;
 using Unity.Entities;
 
 namespace Twtl.Mod.Diagnostics
 {
     internal static class PathGraphDiagnostics
     {
+        // Global one-shot check: a virtual fixture may have no selectable road
+        // surface. This never changes graph or lane data.
+        public static void WriteCandidateBlockages(World world, EntityManager manager)
+        {
+            var queue = world.GetExistingSystemManaged<PathfindQueueSystem>();
+            if (queue == null)
+            {
+                Mod.Log.Warn("[PATH-GRAPH-ALL] PathfindQueueSystem unavailable; blockage UNKNOWN.");
+                return;
+            }
+            var graph = queue.GetDataContainer(out var writeHandle);
+            writeHandle.Complete();
+            var graphData = graph.GetReadOnlyData();
+            int candidates = 0;
+            int matchedPrimary = 0;
+            int matchedSecondary = 0;
+            int mismatches = 0;
+            using (var query = manager.CreateEntityQuery(ComponentType.ReadOnly<Game.Net.CarLane>(),
+                ComponentType.ReadOnly<EdgeLane>()))
+            using (var lanes = query.ToEntityArray(Allocator.Temp))
+            {
+                foreach (Entity lane in lanes)
+                {
+                    var car = manager.GetComponentData<Game.Net.CarLane>(lane);
+                    bool blocked = car.m_BlockageStart == 0 && car.m_BlockageEnd == byte.MaxValue;
+                    bool twoway = (car.m_Flags & CarLaneFlags.Twoway) != 0;
+                    if (!blocked && !twoway) continue;
+                    candidates++;
+                    bool primaryPresent = graph.GetEdge(lane, out var primary);
+                    bool secondaryPresent = graph.GetSecondaryEdge(lane, out var secondary);
+                    bool primaryBlocked = false;
+                    bool secondaryBlocked = false;
+                    if (primaryPresent)
+                    {
+                        var spec = graphData.GetEdge(primary).m_Specification;
+                        primaryBlocked = (spec.m_Rules & RuleFlags.HasBlockage) != 0 &&
+                            spec.m_BlockageStart == 0 && spec.m_BlockageEnd == byte.MaxValue;
+                        if (primaryBlocked) matchedPrimary++;
+                        if (blocked != primaryBlocked) mismatches++;
+                    }
+                    if (secondaryPresent)
+                    {
+                        var spec = graphData.GetEdge(secondary).m_Specification;
+                        secondaryBlocked = (spec.m_Rules & RuleFlags.HasBlockage) != 0 &&
+                            spec.m_BlockageStart == 0 && spec.m_BlockageEnd == byte.MaxValue;
+                        if (secondaryBlocked) matchedSecondary++;
+                        if (blocked != secondaryBlocked) mismatches++;
+                    }
+                    if (candidates <= 32)
+                    {
+                        Entity owner = manager.HasComponent<Owner>(lane)
+                            ? manager.GetComponentData<Owner>(lane).m_Owner : Entity.Null;
+                        Mod.Log.Info($"[PATH-GRAPH-ALL] lane={lane} owner={owner} twoway={twoway} fullLaneBlockage={blocked} primaryPresent={primaryPresent} primaryFullyBlocked={primaryBlocked} secondaryPresent={secondaryPresent} secondaryFullyBlocked={secondaryBlocked}");
+                    }
+                }
+            }
+            Mod.Log.Info($"[PATH-GRAPH-ALL] candidates={candidates} fullyBlockedPrimaryEdges={matchedPrimary} fullyBlockedSecondaryEdges={matchedSecondary} mismatches={mismatches} truncated={candidates > 32}; route rejection and vehicle safety UNKNOWN");
+        }
+
         // One-shot selected-owner inspection. Graph flags are necessary evidence,
         // but they do not prove a completed route or safe vehicle behaviour.
         public static void Write(World world, EntityManager manager, Entity[] lanes)

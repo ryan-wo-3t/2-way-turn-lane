@@ -24,6 +24,8 @@ namespace Twtl.Mod.Diagnostics
             var timer = Stopwatch.StartNew();
             try
             {
+                try { PathGraphDiagnostics.WriteCandidateBlockages(World, EntityManager); }
+                catch (Exception error) { Mod.Log.Error(error, "Read-only global blockage capture failed; continuing selected-road capture."); }
                 Entity selected = World.GetOrCreateSystemManaged<SelectedInfoUISystem>().selectedEntity;
                 string selectionSource = "SelectedInfoUISystem";
                 if (selected != Entity.Null && EntityManager.Exists(selected) &&

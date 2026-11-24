@@ -6,6 +6,8 @@ The installed 1.6.4f1 pathfinder's `IsValidDelta` rejects travel through a car l
 
 A follow-up one-shot diagnostic now compares each selected car lane's blockage with the primary and secondary native path graph specifications and logs mismatches. It passed the installed 1.6.4f1 official C# and Unity IL/Burst build with zero warnings and errors. This build is staged locally and awaits a game restart and capture of the disconnected experimental road; no graph result has been observed yet.
 
+The selected-road graph check was deployed, but the disconnected virtual road was not reliably selectable. The next staged revision adds a bounded global one-shot scan of native two-way or fully blocked car lanes, so selection is unnecessary. It compiles and passes official Unity IL/Burst processing against the installed assemblies with zero warnings and errors. Its runtime result remains unobserved.
+
 ## Bonham traffic baseline, 2026-11-23
 
 The owner's disposable `TWTL Traffic Test` city has ordinary Road Builder traffic. A read-only one-shot capture of its central four-lane road found 56 sub-lanes, 38 car lanes and no native two-way car lanes. Earlier route targets came from non-car lane occupants. A later `CarCurrentLane` world query found two active cars on the selected road, each with 12 near-term navigation segments and remaining native path data. No unsafe research fixture was connected or road layout changed. See [LOCAL_VERIFICATION.md](LOCAL_VERIFICATION.md) for the bounded capture and its limitations.
