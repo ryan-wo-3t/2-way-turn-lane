@@ -1,5 +1,11 @@
 # Installed 1.6.4f1 verification
 
+## Lake Street visual traffic report, 2026-11-23
+
+The owner supplied a screenshot of Lake Street in the disposable Bonham test city and reported that the experimental center corridor appeared usable in both directions, while many left-to-right vehicles used it for through travel. This is a user-observed failure of turn-only behavior, not a counted vehicle sample or a verified collision result. The screenshot does not identify the exact Road Builder section or provide a native path capture. The current experimental lane has no hard turn-only route restriction, so this observation is consistent with the known graph behavior and is a stop condition for further connected traffic trials. Do not treat the visual two-way arrows as functional TWLTL acceptance.
+
+After CS2 exited, commit `7db11b5` was built and deployed using the official toolchain against the installed CS2 1.6.4f1 and Road Builder 0.8.0.0 assemblies. The build and Unity IL/Burst postprocessing completed with zero warnings and errors. Its selected-aggregate resolution and bounded native path queries remain read-only diagnostics; they do not correct the Lake Street through-route failure. No live capture of this deployed revision has run.
+
 ## Bonham ordinary-road traffic baseline, 2026-11-23
 
 The owner identified `Bonham` as the disposable city saved as `TWTL Traffic Test`. In the running CS2 1.6.4f1 game, the central Lake Street section appeared as Road Builder's 24 m `Custom Four-Lane Road`, with homes and businesses on both sides and visible vehicle traffic. A one-shot read-only capture at local log time `17:23:27` selected `RoadBuilderUISystem.WorkingEntity` owner `Entity(170988:167)`. It inspected 56 native sub-lanes, including 38 car lanes, 20 car slave lanes and 18 direct car graph edges. No selected car lane carried the native `Twoway` flag. Six sampled `LaneObject` buffers were nonempty, totaling 49 objects; several car occupants had native path buffers with upcoming `PathElement` entries. The capture took 331 ms, which is one-shot diagnostic cost, not steady-state mod overhead.
