@@ -19,6 +19,12 @@ namespace Twtl.Mod.Diagnostics
             int active = 0;
             int withNavigation = 0;
             int withTurn = 0;
+            int roadNodeTurns = 0;
+            int roadEdgeTurns = 0;
+            int parkingTurns = 0;
+            int connectionTurns = 0;
+            int otherTurns = 0;
+            int roundaboutTurns = 0;
             int turnThenConnection = 0;
             int buildingConnection = 0;
             int sampled = 0;
@@ -61,7 +67,19 @@ namespace Twtl.Mod.Diagnostics
                         }
                         break;
                     }
-                    if (turnIndex >= 0) withTurn++;
+                    if (turnIndex >= 0)
+                    {
+                        withTurn++;
+                        Entity turnLane = navigation[turnIndex].m_Lane;
+                        if (!manager.Exists(turnLane)) otherTurns++;
+                        else if (manager.HasComponent<ParkingLane>(turnLane)) parkingTurns++;
+                        else if (manager.HasComponent<ConnectionLane>(turnLane)) connectionTurns++;
+                        else if (manager.HasComponent<NodeLane>(turnLane)) roadNodeTurns++;
+                        else if (manager.HasComponent<EdgeLane>(turnLane)) roadEdgeTurns++;
+                        else otherTurns++;
+                        if ((navigation[turnIndex].m_Flags & Game.Vehicles.CarLaneFlags.Roundabout) != 0)
+                            roundaboutTurns++;
+                    }
                     if (connectionIndex >= 0) turnThenConnection++;
                     if (building) buildingConnection++;
                     if (turnIndex < 0 || sampled >= 8) continue;
@@ -83,7 +101,7 @@ namespace Twtl.Mod.Diagnostics
                     Mod.Log.Info($"[TURN-INTENT] vehicle={vehicle} turnIndex={turnIndex} connectionIndex={connectionIndex} buildingOwner={building} navigation={sequence}; observation only, entry authorization UNKNOWN");
                 }
             }
-            Mod.Log.Info($"[TURN-INTENT] scannedActiveCars={active} withNavigation={withNavigation} withTurn={withTurn} turnThenConnection={turnThenConnection} buildingConnection={buildingConnection} sampled={sampled} maxCars=512 maxSegments=10; no shared-lane admission or vehicle modification");
+            Mod.Log.Info($"[TURN-INTENT] scannedActiveCars={active} withNavigation={withNavigation} withTurn={withTurn} roadNodeTurns={roadNodeTurns} roadEdgeTurns={roadEdgeTurns} parkingTurns={parkingTurns} connectionTurns={connectionTurns} otherTurns={otherTurns} roundaboutTurns={roundaboutTurns} turnThenConnection={turnThenConnection} buildingConnection={buildingConnection} sampled={sampled} maxCars=512 maxSegments=10; no shared-lane admission or vehicle modification");
         }
     }
 }

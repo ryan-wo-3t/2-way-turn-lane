@@ -24,6 +24,8 @@ A bounded one-shot read-only turn-intent capture now inspects up to 512 active c
 
 The live Bonham capture at `20:07:43` scanned 83 active cars, 81 with navigation and 13 with a turn flag in the next ten segments. Only one had a parking or connection lane within three segments of its first turn flag; none had a building-owned connection. The logged examples include roundabout turns, ordinary node turns, edge-lane turn flags, and a parking lane marked `TurnLeft`. Installed `CarNavigationSystem.FillNavigationPaths` also derives turn flags from both native car lanes and parking lanes. Consequently, a navigation turn flag is not a sufficient turn-purpose or destination test. The center-lane route closure remains active; no car was admitted to it.
 
+The next read-only revision counts the first turn flag separately on road node, road edge, parking, connection and other lanes, and counts roundabout flags. It compiles against installed 1.6.4f1 and passes official Unity IL/Burst postprocessing with zero warnings and errors. This revision awaits a fresh game process for its own live capture; it does not alter the route closure.
+
 ## Bonham traffic baseline, 2026-11-23
 
 The owner's disposable `TWTL Traffic Test` city has ordinary Road Builder traffic. A read-only one-shot capture of its central four-lane road found 56 sub-lanes, 38 car lanes and no native two-way car lanes. Earlier route targets came from non-car lane occupants. A later `CarCurrentLane` world query found two active cars on the selected road, each with 12 near-term navigation segments and remaining native path data. No unsafe research fixture was connected or road layout changed. See [LOCAL_VERIFICATION.md](LOCAL_VERIFICATION.md) for the bounded capture and its limitations.
