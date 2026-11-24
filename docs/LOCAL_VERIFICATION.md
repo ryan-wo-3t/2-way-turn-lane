@@ -1,5 +1,13 @@
 # Installed 1.6.4f1 verification
 
+## Bonham ordinary-road traffic baseline, 2026-11-23
+
+The owner identified `Bonham` as the disposable city saved as `TWTL Traffic Test`. In the running CS2 1.6.4f1 game, the central Lake Street section appeared as Road Builder's 24 m `Custom Four-Lane Road`, with homes and businesses on both sides and visible vehicle traffic. A one-shot read-only capture at local log time `17:23:27` selected `RoadBuilderUISystem.WorkingEntity` owner `Entity(170988:167)`. It inspected 56 native sub-lanes, including 38 car lanes, 20 car slave lanes and 18 direct car graph edges. No selected car lane carried the native `Twoway` flag. Six sampled `LaneObject` buffers were nonempty, totaling 49 objects; several car occupants had native path buffers with upcoming `PathElement` entries. The capture took 331 ms, which is one-shot diagnostic cost, not steady-state mod overhead.
+
+The selected owner did not resolve to a saved Road Builder road configuration through the current diagnostic, so no section-level configuration or turn-intent claim follows. No left turn into a shared center lane was tested, and no unsafe TWTL fixture was placed or connected. The city road layout was not edited during this check, and the game was left open. The existing ordinary road supplies a moving-vehicle baseline for later route-intent work; traffic activation remains blocked by the unverified runtime gates.
+
+The diagnostic was subsequently updated to request Road Builder's public prefab-derived configuration for ordinary roads. This code change has not yet been run against Bonham. A prefab-derived result describes the selected road's underlying stock prefab, not unsaved changes in the Road Builder editor, and cannot establish turn intent or authorize traffic behavior.
+
 Verified on Windows on 2026-11-10. This supersedes the original cloud report's lack of licensed assemblies, not its untested gameplay claims.
 
 ## Installed dependencies

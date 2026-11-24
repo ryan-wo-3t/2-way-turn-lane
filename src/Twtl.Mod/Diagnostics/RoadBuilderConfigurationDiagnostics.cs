@@ -7,7 +7,7 @@ using Unity.Entities;
 
 namespace Twtl.Mod.Diagnostics
 {
-    /// <summary>One-shot inspection of the saved Road Builder configuration behind a selected owner.</summary>
+    /// <summary>One-shot inspection of the road prefab's Road Builder configuration.</summary>
     internal static class RoadBuilderConfigurationDiagnostics
     {
         private const int MaximumSections = 64;
@@ -22,17 +22,22 @@ namespace Twtl.Mod.Diagnostics
             }
             var prefabSystem = world.GetOrCreateSystemManaged<PrefabSystem>();
             var reference = manager.GetComponentData<PrefabRef>(owner);
-            if (!prefabSystem.TryGetSpecificPrefab<NetGeometryPrefab>(reference, out var road) ||
-                road is not INetworkBuilderPrefab builder)
+            if (!prefabSystem.TryGetSpecificPrefab<NetGeometryPrefab>(reference, out var road))
             {
-                Mod.Log.Warn("[CONFIG] Selected owner is not a saved Road Builder road; configuration unknown.");
+                Mod.Log.Warn("[CONFIG] Selected owner has no road geometry prefab; configuration unknown.");
                 return;
             }
 
-            var config = builder.Config;
+            // Road Builder can edit a stock road before it has a saved custom prefab.
+            // Its public method derives a configuration from that prefab in this case.
+            // This is a one-shot diagnostic, never traffic activation evidence.
+            bool saved = road is INetworkBuilderPrefab;
+            var config = saved
+                ? ((INetworkBuilderPrefab)road).Config
+                : world.GetExistingSystemManaged<RoadBuilderSystem>()?.GetOrGenerateConfiguration(owner);
             if (config == null)
             {
-                Mod.Log.Warn("[CONFIG] Road Builder prefab has no saved configuration.");
+                Mod.Log.Warn("[CONFIG] Road Builder could not resolve a configuration for this road prefab.");
                 return;
             }
             var catalogue = world.GetExistingSystemManaged<RoadBuilderGenerationDataSystem>();
@@ -40,7 +45,7 @@ namespace Twtl.Mod.Diagnostics
             int closedCount = 0;
             bool closedHasLanes = false;
             bool closedFullyInspected = true;
-            Mod.Log.Info($"[CONFIG] road={road.name} sections={config.Lanes.Count} captured={count} category={config.Category}; read-only source configuration");
+            Mod.Log.Info($"[CONFIG] road={road.name} source={(saved ? "saved-prefab" : "generated-from-stock-prefab")} sections={config.Lanes.Count} captured={count} category={config.Category}; prefab configuration only, unsaved editor changes excluded");
             RoadBuilderCrossSectionDiagnostics.Write(world, config);
             for (int i = 0; i < count; i++)
             {

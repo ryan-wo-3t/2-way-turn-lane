@@ -1,5 +1,11 @@
 # Implementation and verification report
 
+## Bonham traffic baseline, 2026-11-23
+
+The owner's disposable `TWTL Traffic Test` city now has occupied ordinary Road Builder lanes and active native vehicle path buffers. A read-only one-shot capture of its central four-lane road found 56 sub-lanes, 38 car lanes and no native two-way car lanes. This supplies live route data for future intent extraction. It does not verify a left turn into a shared lane; no unsafe research fixture was connected or road layout changed. See [LOCAL_VERIFICATION.md](LOCAL_VERIFICATION.md) for the bounded capture and its limitations.
+
+The configuration diagnostic now uses Road Builder's public `GetOrGenerateConfiguration` for ordinary road prefabs and labels the result as prefab-derived, excluding unsaved editor changes. This is a one-shot readout only. The change compiled and passed official IL/Burst postprocessing against installed CS2 1.6.4f1 and Road Builder 0.8.0.0 with 0 warnings and 0 errors; it has not been deployed or run in Bonham.
+
 ## Safety-gate revision, 2026-11-22
 
 The core runtime validator now requires explicit physical-topology, bidirectional-graph, turn-only-routing, opposing-conflict, entry-enforcement, occupancy-reconciliation, safe-exit, intersection-transition and tram-conflict evidence. Unknown evidence blocks activation, a negative check invalidates it, and a configuration warning cannot be promoted to Valid by runtime evidence. The selected-road diagnostic now reports `runtimeStatus` separately from physical `configurationStatus`, with traffic evidence unknown. The core suite passes **37/37**. The mod builds and passes official Unity IL/Burst postprocessing against the installed CS2 **1.6.4f1** and Road Builder **0.8.0.0** assemblies with **0 warnings / 0 errors**. This revision is staged locally, not deployed to CS2.
