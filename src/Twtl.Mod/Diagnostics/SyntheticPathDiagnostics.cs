@@ -7,9 +7,9 @@ using Unity.Mathematics;
 namespace Twtl.Mod.Diagnostics
 {
     /// <summary>
-    /// One-shot native pathfinder probe for a selected direct two-way car lane.
-    /// It asks whether the graph permits travel from one end of that same lane
-    /// to the other. It does not create a vehicle or modify the network.
+    /// One-shot native pathfinder probe for selected direct two-way car lanes.
+    /// It checks each lane and, when their path nodes touch, travel across the
+    /// pair. It does not create a vehicle or modify the network.
     /// </summary>
     internal static class SyntheticPathDiagnostics
     {
@@ -25,10 +25,13 @@ namespace Twtl.Mod.Diagnostics
             var graph = queue.GetDataContainer(out var writeHandle);
             writeHandle.Complete();
             int probed = 0;
+            var direct = new Entity[2];
+            var nodes = new Lane[2];
             foreach (Entity lane in lanes)
             {
                 if (probed >= 2) break;
-                if (!manager.Exists(lane) || !manager.HasComponent<Game.Net.CarLane>(lane) ||
+                if (!manager.Exists(lane) || !manager.HasComponent<Lane>(lane) ||
+                    !manager.HasComponent<Game.Net.CarLane>(lane) ||
                     manager.HasComponent<SlaveLane>(lane)) continue;
                 var car = manager.GetComponentData<Game.Net.CarLane>(lane);
                 if ((car.m_Flags & CarLaneFlags.Twoway) == 0 || !graph.GetEdge(lane, out var edge)) continue;
@@ -36,14 +39,35 @@ namespace Twtl.Mod.Diagnostics
                 if ((flags & (EdgeFlags.Forward | EdgeFlags.Backward)) !=
                     (EdgeFlags.Forward | EdgeFlags.Backward)) continue;
 
+                direct[probed] = lane;
+                nodes[probed] = manager.GetComponentData<Lane>(lane);
                 probed++;
-                Probe(graph, lane, 0f, 1f);
-                Probe(graph, lane, 1f, 0f);
+                Probe(graph, lane, 0f, lane, 1f);
+                Probe(graph, lane, 1f, lane, 0f);
             }
-            Mod.Log.Info($"[PATH-PROBE] directTwoWayLanesProbed={probed} maxLanes=2; same-lane endpoint queries only, turn-only routing and safe entry UNKNOWN");
+            int joinedQueries = 0;
+            if (probed == 2)
+            {
+                Entity first = direct[0];
+                Entity second = direct[1];
+                if (nodes[0].m_EndNode.Equals(nodes[1].m_StartNode))
+                {
+                    Probe(graph, first, 0f, second, 1f);
+                    Probe(graph, second, 1f, first, 0f);
+                    joinedQueries = 2;
+                }
+                else if (nodes[1].m_EndNode.Equals(nodes[0].m_StartNode))
+                {
+                    Probe(graph, second, 0f, first, 1f);
+                    Probe(graph, first, 1f, second, 0f);
+                    joinedQueries = 2;
+                }
+            }
+            Mod.Log.Info($"[PATH-PROBE] directTwoWayLanesProbed={probed} joinedQueries={joinedQueries} maxQueries=6; turn-only routing, roadside entry, and traffic safety UNKNOWN");
         }
 
-        private static void Probe(NativePathfindData graph, Entity lane, float start, float end)
+        private static void Probe(NativePathfindData graph, Entity startLane, float start,
+            Entity endLane, float end)
         {
             var parameters = new PathfindParameters
             {
@@ -61,17 +85,21 @@ namespace Twtl.Mod.Diagnostics
                 parameters, SetupTargetType.CurrentLocation, SetupTargetType.CurrentLocation);
             try
             {
-                action.m_StartTargets[0] = new PathTarget(lane, lane, start, 0f);
-                action.m_EndTargets[0] = new PathTarget(lane, lane, end, 0f);
+                action.m_StartTargets[0] = new PathTarget(startLane, startLane, start, 0f);
+                action.m_EndTargets[0] = new PathTarget(endLane, endLane, end, 0f);
                 PathfindJobs.PathfindJob.Execute(graph, Allocator.Temp,
                     new Unity.Mathematics.Random(1u), default(PathfindHeuristicData), 30f, 30f, ref action);
                 var result = action.m_Result[0];
-                bool traversedLane = false;
+                bool traversedStart = false;
+                bool traversedEnd = false;
                 for (int i = 0; i < action.m_Path.Length; i++)
-                    if (action.m_Path[i].m_Target == lane) traversedLane = true;
+                {
+                    if (action.m_Path[i].m_Target == startLane) traversedStart = true;
+                    if (action.m_Path[i].m_Target == endLane) traversedEnd = true;
+                }
                 bool found = result.m_PathLength > 0 && result.m_Distance > 0f &&
-                    result.m_ErrorCode == 0 && traversedLane;
-                Mod.Log.Info($"[PATH-PROBE] lane={lane} start={start} end={end} found={found} traversedSelectedLane={traversedLane} pathLength={result.m_PathLength} pathEntries={action.m_Path.Length} distance={result.m_Distance} error={result.m_ErrorCode}; graph path only, no actual vehicle or eligible turn");
+                    result.m_ErrorCode == 0 && traversedStart && traversedEnd;
+                Mod.Log.Info($"[PATH-PROBE] startLane={startLane} start={start} endLane={endLane} end={end} found={found} traversedStart={traversedStart} traversedEnd={traversedEnd} pathLength={result.m_PathLength} pathEntries={action.m_Path.Length} distance={result.m_Distance} error={result.m_ErrorCode}; graph path only, no actual vehicle or eligible turn");
             }
             finally { action.Dispose(); }
         }
