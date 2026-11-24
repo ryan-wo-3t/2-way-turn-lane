@@ -126,7 +126,12 @@ namespace Twtl.Mod.Diagnostics
                                 var path = EntityManager.GetBuffer<Game.Pathfind.PathElement>(vehicle, true);
                                 int remaining = first >= 0 && first <= path.Length ? path.Length - first : 0;
                                 Mod.Log.Info($"[VEHICLE] pathElements={path.Length} first={first} captured={Math.Min(remaining, 16)}; raw route data, turn intent UNKNOWN");
-                                for (int i = 0; i < Math.Min(remaining, 16); i++) Dump("pathElement", path[first + i]);
+                                for (int i = 0; i < Math.Min(remaining, 16); i++)
+                                {
+                                    var element = path[first + i];
+                                    Dump("pathElement", element);
+                                    if (i < 8) Mod.Log.Info("[ROUTE] " + RouteTargetDiagnostics.Describe(EntityManager, element));
+                                }
                             }
                         }
                     }

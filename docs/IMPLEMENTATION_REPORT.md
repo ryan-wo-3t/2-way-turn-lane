@@ -6,6 +6,8 @@ The owner's disposable `TWTL Traffic Test` city now has occupied ordinary Road B
 
 The configuration diagnostic now uses Road Builder's public `GetOrGenerateConfiguration` for ordinary road prefabs and labels the result as prefab-derived, excluding unsaved editor changes. This is a one-shot readout only. The change compiled and passed official IL/Burst postprocessing against installed CS2 1.6.4f1 and Road Builder 0.8.0.0 with 0 warnings and 0 errors; it has not been deployed or run in Bonham.
 
+The next one-shot capture also labels up to eight native path targets per sampled vehicle as car edge lanes, car node lanes, other lanes or stale entities. For car targets it reports native turn flags and path direction. This provides a bounded way to inspect Bonham's ordinary junction routes; flags alone do not establish a shared-lane turning movement. The staged build passed official postprocessing with 0 warnings and 0 errors and has not been deployed.
+
 ## Safety-gate revision, 2026-11-22
 
 The core runtime validator now requires explicit physical-topology, bidirectional-graph, turn-only-routing, opposing-conflict, entry-enforcement, occupancy-reconciliation, safe-exit, intersection-transition and tram-conflict evidence. Unknown evidence blocks activation, a negative check invalidates it, and a configuration warning cannot be promoted to Valid by runtime evidence. The selected-road diagnostic now reports `runtimeStatus` separately from physical `configurationStatus`, with traffic evidence unknown. The core suite passes **37/37**. The mod builds and passes official Unity IL/Burst postprocessing against the installed CS2 **1.6.4f1** and Road Builder **0.8.0.0** assemblies with **0 warnings / 0 errors**. This revision is staged locally, not deployed to CS2.
