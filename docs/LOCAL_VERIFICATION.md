@@ -6,7 +6,13 @@ The owner identified `Bonham` as the disposable city saved as `TWTL Traffic Test
 
 The selected owner did not resolve to a saved Road Builder road configuration through the current diagnostic, so no section-level configuration or turn-intent claim follows. No left turn into a shared center lane was tested, and no unsafe TWTL fixture was placed or connected. The city road layout was not edited during this check, and the game was left open. The existing ordinary road supplies a moving-vehicle baseline for later route-intent work; traffic activation remains blocked by the unverified runtime gates.
 
-The diagnostic was subsequently updated to request Road Builder's public prefab-derived configuration for ordinary roads. This code change has not yet been run against Bonham. A prefab-derived result describes the selected road's underlying stock prefab, not unsaved changes in the Road Builder editor, and cannot establish turn intent or authorize traffic behavior.
+The diagnostic was subsequently updated to request Road Builder's public prefab-derived configuration for ordinary roads. A prefab-derived result describes the selected road's underlying stock prefab, not unsaved changes in the Road Builder editor, and cannot establish turn intent or authorize traffic behavior.
+
+## Bonham deployed route capture, 2026-11-23
+
+After CS2 was closed, the staged diagnostic build was deployed to the local development mod directory and CS2 1.6.4f1 was reopened with the `2wtl - dev` playset. The saved `TWTL Traffic Test` city loaded. Road Builder selected Lake Street without changing its layout. The one-shot capture at local log time `17:35:16` resolved `RoadBuilderUISystem.WorkingEntity` owner `Entity(195696:1)`, 56 native sub-lanes and Road Builder's generated configuration for stock `Medium Road` with six sections. The owner entity differs from the earlier session after reload; it is a capture identifier, not a persistent road ID.
+
+The bounded route readout logged 32 upcoming path targets across sampled vehicles: 9 other entities, 8 non-car edge lanes, 8 non-car node lanes, 5 car node lanes and 2 car edge lanes. One car edge lane carried a native `TurnLeft` flag together with `Approach` and `Roundabout`; one car node lane carried `GentleTurnRight` with `Roundabout`. These flags show native target metadata, not a verified left turn into a shared lane. The capture took 294.139 ms and logged no error in its capture block. The Road Builder editor was closed afterward; no roads were edited or saved, and the game was left open.
 
 Verified on Windows on 2026-11-10. This supersedes the original cloud report's lack of licensed assemblies, not its untested gameplay claims.
 

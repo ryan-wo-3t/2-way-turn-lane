@@ -25,7 +25,7 @@ namespace Twtl.Mod.Diagnostics
             bool left = (flags & (CarLaneFlags.TurnLeft | CarLaneFlags.GentleTurnLeft)) != 0;
             bool right = (flags & (CarLaneFlags.TurnRight | CarLaneFlags.GentleTurnRight)) != 0;
             bool uturn = (flags & (CarLaneFlags.UTurnLeft | CarLaneFlags.UTurnRight)) != 0;
-            return $"target={target} kind={kind} pathDirection={direction} nativeTurnLeft={left} nativeTurnRight={right} nativeUTurn={uturn} carFlags={flags}; node flags describe this path segment, not proven shared-lane intent";
+            return $"target={target} kind={kind} pathDirection={direction} nativeTurnLeft={left} nativeTurnRight={right} nativeUTurn={uturn} carFlags={flags}; native flags describe this path segment, not proven shared-lane intent";
         }
     }
 }
