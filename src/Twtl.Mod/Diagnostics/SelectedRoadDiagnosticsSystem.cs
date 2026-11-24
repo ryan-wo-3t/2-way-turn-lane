@@ -59,6 +59,8 @@ namespace Twtl.Mod.Diagnostics
                 PathNodeContinuityDiagnostics.Write(EntityManager, identities);
                 try { PathGraphDiagnostics.Write(World, EntityManager, identities); }
                 catch (Exception error) { Mod.Log.Error(error, "Read-only path graph capture failed; continuing native lane capture."); }
+                try { SyntheticPathDiagnostics.Write(World, EntityManager, identities); }
+                catch (Exception error) { Mod.Log.Error(error, "Read-only synthetic path query failed; continuing native lane capture."); }
                 try { NativeOpposingOccupancyDiagnostics.Write(EntityManager, identities); }
                 catch (Exception error) { Mod.Log.Error(error, "Read-only opposing occupancy capture failed; continuing native lane capture."); }
                 try { JunctionConnectionDiagnostics.Write(World, EntityManager, selected, identities); }
