@@ -49,7 +49,7 @@ namespace Twtl.Mod
                 [settings.GetOptionLabelLocaleID(nameof(Settings.ShowVirtualLaneGraphFixture))] = "Expose virtual-lane graph test",
                 [settings.GetOptionDescLocaleID(nameof(Settings.ShowVirtualLaneGraphFixture))] = "Adds a disconnected road with a zero-width non-road lane after the center. Tests path grouping without a traffic divider. Lateral access and safety are unknown. No car traffic. Restart to remove it.",
                 [settings.GetOptionLabelLocaleID(nameof(Settings.EnableDrivablePrototype))] = "Enable drivable prototype in test city",
-                [settings.GetOptionDescLocaleID(nameof(Settings.EnableDrivablePrototype))] = "Adds a separate Road Builder road whose center lane is open to cars. Turn-only routing and opposing-car safety are NOT implemented. Use only in a disposable test city; do not save it into a valued city. Turning this off closes its center lanes again.",
+                [settings.GetOptionDescLocaleID(nameof(Settings.EnableDrivablePrototype))] = "Adds a five-lane Road Builder road with four travel lanes and a shared center open to cars. Turn-only routing and opposing-car safety are NOT implemented. Use only in a disposable test city; do not save it into a valued city. Turning this off closes its center lanes again.",
                 [settings.GetOptionLabelLocaleID(nameof(Settings.CaptureSelectedRoad))] = "Capture road and safety probe once",
                 [settings.GetOptionDescLocaleID(nameof(Settings.CaptureSelectedRoad))] = "Runs one-time read-only center-lane graph, route and vehicle-turn captures. Select a road first for extra lane geometry and vehicle details. Automatically resets; no traffic is modified."
             };

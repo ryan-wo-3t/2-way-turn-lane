@@ -19,7 +19,7 @@ namespace Twtl.Mod.RoadBuilderIntegration
     {
         public const string PrefabName = "TWTL VIRTUAL-LANE GRAPH TEST 3m";
         public const string RoadId = "TWTL_VIRTUAL_LANE_GRAPH_TEST_ROAD_V1";
-        public const string DrivableRoadId = "TWTL_DRIVABLE_TEST_ROAD_V1";
+        public const string DrivableRoadId = "TWTL_DRIVABLE_FIVE_LANE_TEST_ROAD_V2";
         private const string NativeSectionName = "Invisible Car Twoway Section 3";
         private const string NativeLaneName = "Invisible Car Twoway Lane 3";
         private const string VirtualLaneName = "TWTL ZERO-WIDTH NON-ROAD LANE GRAPH TEST";
@@ -50,7 +50,7 @@ namespace Twtl.Mod.RoadBuilderIntegration
                     if (!drivableRoadAttempted && Mod.Options?.EnableDrivablePrototype == true)
                     {
                         drivableRoadAttempted = true;
-                        RegisterTestRoad(DrivableRoadId, "TWTL DRIVABLE PROTOTYPE - TEST CITY ONLY");
+                        RegisterTestRoad(DrivableRoadId, "TWTL FIVE-LANE DRIVABLE PROTOTYPE - TEST CITY ONLY");
                     }
                 }
                 return;
@@ -154,6 +154,19 @@ namespace Twtl.Mod.RoadBuilderIntegration
                 })
                     if (!generation.NetSectionPrefabs.ContainsKey(name))
                         throw new InvalidOperationException("Road Builder utility section missing: " + name);
+                var roadLanes = new List<LaneConfig>
+                {
+                    new LaneConfig { SectionPrefabName = SideLaneName, Invert = true },
+                    new LaneConfig { SectionPrefabName = PrefabName },
+                    new LaneConfig { SectionPrefabName = SideLaneName }
+                };
+                if (roadId == DrivableRoadId)
+                {
+                    // Match Bonham's four ordinary Lake Street lanes. The
+                    // native shared center is the fifth lane.
+                    roadLanes.Insert(0, new LaneConfig { SectionPrefabName = SideLaneName, Invert = true });
+                    roadLanes.Add(new LaneConfig { SectionPrefabName = SideLaneName });
+                }
                 var config = new RoadConfig
                 {
                     ID = roadId,
@@ -163,17 +176,12 @@ namespace Twtl.Mod.RoadBuilderIntegration
                     Addons = RequiredAddons,
                     SpeedLimit = 80f,
                     ToolbarState = ShowInToolbarState.Show,
-                    Lanes = new List<LaneConfig>
-                    {
-                        new LaneConfig { SectionPrefabName = SideLaneName, Invert = true },
-                        new LaneConfig { SectionPrefabName = PrefabName },
-                        new LaneConfig { SectionPrefabName = SideLaneName }
-                    }
+                    Lanes = roadLanes
                 };
                 if (builder.AddPrefab(config) == null)
                     throw new InvalidOperationException("Road Builder rejected virtual-lane graph road.");
                 if (roadId == DrivableRoadId)
-                    Mod.Log.Warn("[DRIVABLE PROTOTYPE] Registered opt-in road for disposable-city car trials. Center lane has no turn-only routing, opposing conflict control or safety guarantee. Do not use in valued saves.");
+                    Mod.Log.Warn("[DRIVABLE PROTOTYPE] Registered opt-in five-lane road for disposable-city car trials. Center lane has no turn-only routing, opposing conflict control or safety guarantee. Do not use in valued saves.");
                 else
                     Mod.Log.Warn("[VIRTUAL LANE GRAPH TEST] Registered disconnected-only road with Road Builder utility and zoning addons. Native utility continuity is not live-verified; no car trial or traffic safeguards.");
             }

@@ -2,7 +2,7 @@
 
 ## Drivable prototype test, 2026-11-23
 
-An opt-in, default-off Road Builder road `TWTL DRIVABLE PROTOTYPE - TEST CITY ONLY` is now built for car trials in the disposable Bonham city. It reuses the verified virtual-lane section. The native center-lane pathfinder closure exempts this road only while the option is enabled; disabling it closes the center again. The official local C# and Unity IL/Burst pipeline succeeded with zero warnings and errors. No in-game car use has yet been observed for this build. The prototype has no turn-only route gate, opponent reservation or verified safe braking; do not copy it into a valued save.
+An opt-in, default-off Road Builder road `TWTL FIVE-LANE DRIVABLE PROTOTYPE - TEST CITY ONLY` is now built for car trials in the disposable Bonham city. It has four ordinary travel lanes and reuses the verified virtual-lane section for a fifth, shared center lane. The initial three-lane version registered at `20:17:31` but was not placed; its ID is not exempt from closure. The native center-lane pathfinder closure exempts only the five-lane road while the option is enabled; disabling it closes the center again. The official local C# and Unity IL/Burst pipeline succeeded with zero warnings and errors. No in-game car use has yet been observed for this five-lane build. The prototype has no turn-only route gate, opponent reservation or verified safe braking; do not copy it into a valued save.
 
 ## Lake Street visual traffic report, 2026-11-23
 
