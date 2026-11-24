@@ -2,7 +2,7 @@
 
 ## Boundaries
 
-`src/Twtl.Core` targets netstandard2.0 and contains no engine types. `src/Twtl.Mod` targets net472, following the inspected Road Builder project, and uses the official CS2 build imports. This framework choice is source-based, not proof of the actual current game's runtime profile. The mod adapter references the real RoadBuilder.dll with copy-local disabled. The core is packaged as a separate managed dependency. `tests/Twtl.Core.Tests` targets net8.0 and runs as a console process with explicit failure exit status.
+`src/Twtl.Core` targets netstandard2.0 and contains no engine types. `src/Twtl.Mod` targets net48 and uses the official CS2 build imports. It has passed the installed CS2 1.6.4f1 and Road Builder 0.8.0.0 C# and Unity IL/Burst build. The mod adapter references the real RoadBuilder.dll with copy-local disabled. The core is packaged as a separate managed dependency. `tests/Twtl.Core.Tests` targets net8.0 and runs as a console process with explicit failure exit status.
 
 ```mermaid
 flowchart LR
@@ -48,4 +48,4 @@ Transition planning excludes the configured end intervals before the shared midd
 
 The game adapter has no reservations to persist or traffic state to clean up. It stops its systems on disposal and does not remove live prefabs. Changing the research toggle off does not remove an already registered section; restart to remove it from the picker. Existing research roads are subject to Road Builder's missing-lane rebuild semantics. Uninstall safety is unverified.
 
-No city-wide per-frame vehicle query exists. The inspector reads only a selected segment, once per request, capped at 64 lanes and 64 entries per buffer; counts disclose truncation. A separate budget captures native navigation/current-lane/motion/transform data for at most 32 lane objects. Nested public geometry fields are formatted to a bounded depth and the simulation frame is recorded. The reservation prototype scans active reservations within one corridor and allocates during batches/reconciliation. It is not Burst-compatible or a demonstrated production performance solution. No large-city overhead has been measured.
+No city-wide per-frame vehicle query exists. The one-shot inspector reads a selected segment, capped at 64 lanes and 64 entries per lane-object buffer, then queries `CarCurrentLane` across the world to find active cars on those selected lanes. It logs routes for at most 32 selected-road cars; if none match, it labels up to eight other-road cars as fallback. Counts disclose truncation. Nested public geometry fields are formatted to a bounded depth and the simulation frame is recorded. The reservation prototype scans active reservations within one corridor and allocates during batches/reconciliation. It is not Burst-compatible or a demonstrated production performance solution. No large-city overhead has been measured.
