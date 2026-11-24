@@ -63,6 +63,8 @@ namespace Twtl.Mod.Diagnostics
                 try { JunctionConnectionDiagnostics.Write(World, EntityManager, selected, identities); }
                 catch (Exception error) { Mod.Log.Error(error, "Read-only endpoint junction capture failed; continuing native lane capture."); }
                 int vehicleBudget = 32;
+                int sampledActiveCars = 0;
+                int capturedCarLaneObjects = 0;
                 foreach (Entity lane in identities)
                 {
                     if (!EntityManager.Exists(lane)) { Mod.Log.Warn("[CAPTURE] stale lane=" + lane); continue; }
@@ -75,7 +77,8 @@ namespace Twtl.Mod.Diagnostics
                         Dump("nodeLane", EntityManager.GetComponentData<NodeLane>(lane));
                     if (EntityManager.HasComponent<Curve>(lane))
                         Dump("curve", EntityManager.GetComponentData<Curve>(lane));
-                    if (EntityManager.HasComponent<Game.Net.CarLane>(lane))
+                    bool carLane = EntityManager.HasComponent<Game.Net.CarLane>(lane);
+                    if (carLane)
                         Dump("carLane", EntityManager.GetComponentData<Game.Net.CarLane>(lane));
                     if (EntityManager.HasComponent<LaneReservation>(lane))
                         Dump("nativeReservation", EntityManager.GetComponentData<LaneReservation>(lane));
@@ -91,17 +94,23 @@ namespace Twtl.Mod.Diagnostics
                         Mod.Log.Info("[LANE] objectCount=" + occupants.Length);
                         var objects = new LaneObject[Math.Min(occupants.Length, 64)];
                         for (int i = 0; i < objects.Length; i++) objects[i] = occupants[i];
+                        if (carLane) capturedCarLaneObjects += objects.Length;
                         foreach (var item in objects)
                         {
                             Dump("laneObject", item);
                             Entity vehicle = item.m_LaneObject;
-                            if (vehicleBudget <= 0 || !EntityManager.Exists(vehicle)) continue;
+                            // LaneObject also covers pedestrians, parked objects and other
+                            // occupants. Spend the vehicle budget only on active car lanes.
+                            if (!carLane || vehicleBudget <= 0 || !EntityManager.Exists(vehicle) ||
+                                !EntityManager.HasComponent<Game.Vehicles.CarCurrentLane>(vehicle)) continue;
+                            var current = EntityManager.GetComponentData<Game.Vehicles.CarCurrentLane>(vehicle);
+                            if (current.m_Lane == Entity.Null) continue;
                             vehicleBudget--;
-                            Mod.Log.Info("[VEHICLE] " + vehicle);
+                            sampledActiveCars++;
+                            Mod.Log.Info($"[VEHICLE] activeCar={vehicle} inspectedLane={lane} currentLane={current.m_Lane}");
                             if (EntityManager.HasComponent<Game.Vehicles.CarNavigation>(vehicle))
                                 Dump("carNavigation", EntityManager.GetComponentData<Game.Vehicles.CarNavigation>(vehicle));
-                            if (EntityManager.HasComponent<Game.Vehicles.CarCurrentLane>(vehicle))
-                                Dump("carCurrentLane", EntityManager.GetComponentData<Game.Vehicles.CarCurrentLane>(vehicle));
+                            Dump("carCurrentLane", current);
                             if (EntityManager.HasComponent<Game.Objects.Moving>(vehicle))
                                 Dump("moving", EntityManager.GetComponentData<Game.Objects.Moving>(vehicle));
                             if (EntityManager.HasComponent<Game.Objects.Transform>(vehicle))
@@ -136,6 +145,7 @@ namespace Twtl.Mod.Diagnostics
                         }
                     }
                 }
+                Mod.Log.Info($"[CAPTURE] capturedCarLaneObjects={capturedCarLaneObjects} sampledActiveCars={sampledActiveCars} maxActiveCars=32; non-car occupants excluded from route inspection");
             }
             catch (Exception error) { Mod.Log.Error(error, "Read-only lane capture failed"); }
             finally { Mod.Log.Info($"[CAPTURE] elapsedMs={timer.Elapsed.TotalMilliseconds:F3}; this is diagnostic capture time, not traffic-system overhead."); }
