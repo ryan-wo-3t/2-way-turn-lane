@@ -23,6 +23,7 @@ namespace Twtl.Mod.Diagnostics
             }
             var graph = queue.GetDataContainer(out var writeHandle);
             writeHandle.Complete();
+            var graphData = graph.GetReadOnlyData();
             int candidates = 0;
             int queried = 0;
             int openCandidates = 0;
@@ -47,8 +48,9 @@ namespace Twtl.Mod.Diagnostics
                         ProbeLane(graph, lane, 0.1f, 0.9f, "PATH-CLOSED");
                         ProbeLane(graph, lane, 0.9f, 0.1f, "PATH-CLOSED");
                     }
-                    else if (car.m_BlockageStart == car.m_BlockageEnd &&
-                        (flags & EdgeFlags.Forward) != 0)
+                    else if (car.m_BlockageEnd < car.m_BlockageStart &&
+                        (flags & EdgeFlags.Forward) != 0 &&
+                        (graphData.GetEdge(edge).m_Specification.m_Rules & RuleFlags.HasBlockage) == 0)
                     {
                         openCandidates++;
                         if (openQueried >= 2) continue;

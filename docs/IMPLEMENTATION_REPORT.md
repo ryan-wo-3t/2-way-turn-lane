@@ -16,6 +16,8 @@ The probe was deployed and run in the `23-November-19-32-12` Bonham autosave und
 
 Interpretation of that failure needs an open-lane positive control using the same query setup; otherwise a malformed synthetic query could produce the same empty result. The follow-up diagnostic adds at most two open direct forward-lane queries alongside the closed-lane probes. It passed the installed-assembly and official Unity IL/Burst build with zero warnings and errors. Until an open-lane query succeeds in-game, the closed-lane route-denial claim is provisional.
 
+The first live control capture found zero eligible open lanes because the diagnostic incorrectly treated equal blockage endpoints as unblocked. Installed `LaneDataSystem` initializes unblocked car lanes as `m_BlockageStart=255`, `m_BlockageEnd=0`; `PathUtils` sets `HasBlockage` only when end is at least start. The corrected filter checks that empty interval and the graph rule flag. It again passes the installed-assembly and official Unity IL/Burst build with zero warnings and errors, but awaits redeployment and a successful control query.
+
 ## Bonham traffic baseline, 2026-11-23
 
 The owner's disposable `TWTL Traffic Test` city has ordinary Road Builder traffic. A read-only one-shot capture of its central four-lane road found 56 sub-lanes, 38 car lanes and no native two-way car lanes. Earlier route targets came from non-car lane occupants. A later `CarCurrentLane` world query found two active cars on the selected road, each with 12 near-term navigation segments and remaining native path data. No unsafe research fixture was connected or road layout changed. See [LOCAL_VERIFICATION.md](LOCAL_VERIFICATION.md) for the bounded capture and its limitations.
