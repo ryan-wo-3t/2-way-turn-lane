@@ -1,5 +1,7 @@
 # Known limitations
 
+- Experimental Road Builder center sections now have a staged native full-lane blockage gate. It compiles against installed 1.6.4f1 and should prevent new pathfinder routes through recognized experimental center lanes, while ordinary lanes remain available. This is a complete closure, not turn-only behavior. It has not been live-verified; vehicles already occupying a lane may retain old navigation until the game replans. The gate only recognizes Road Builder configurations containing this add-on's experimental section names and the installed `Invisible Car Twoway Lane 3` prefab. Disabling the mod or an unresolved/generated configuration can leave the experimental road unprotected. Do not use these sections as a functional shared turn lane.
+
 This branch is not a working TWLTL traffic mod. It must not be published as one.
 
 - Bonham (`TWTL Traffic Test`) supplies an ordinary-road traffic baseline. A direct `CarCurrentLane` query at `17:59:26` found two selected-road active cars, each with 12 near-term navigation segments and remaining path data. The deployed diagnostic derived six sections from the selected stock `Medium Road` prefab, excluding unsaved Road Builder edits. No left turn into a shared lane was tested, and the road layout was unchanged.

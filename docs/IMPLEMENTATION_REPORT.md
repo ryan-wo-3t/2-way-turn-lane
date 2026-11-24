@@ -1,5 +1,9 @@
 # Implementation and verification report
 
+## Experimental center closure, 2026-11-23
+
+The installed 1.6.4f1 pathfinder's `IsValidDelta` rejects travel through a car lane's entire `m_BlockageStart=0` to `m_BlockageEnd=255` interval. A new system runs after native `LaneDataSystem` and before `LanesModifiedSystem` in `ModificationEnd`, identifies native center lanes on Road Builder roads containing one of this add-on's experimental sections, and applies that full blockage. It keeps ordinary lanes available. On a city load it scans existing lanes once; after that it processes created, updated or pathfind-updated lanes. This is an interim safety closure, not a turn-only route implementation. The exact runtime ordering, route removal and existing-car behavior still require a live test. The official installed-assembly and Unity IL/Burst build completed with zero warnings and errors.
+
 ## Bonham traffic baseline, 2026-11-23
 
 The owner's disposable `TWTL Traffic Test` city has ordinary Road Builder traffic. A read-only one-shot capture of its central four-lane road found 56 sub-lanes, 38 car lanes and no native two-way car lanes. Earlier route targets came from non-car lane occupants. A later `CarCurrentLane` world query found two active cars on the selected road, each with 12 near-term navigation segments and remaining native path data. No unsafe research fixture was connected or road layout changed. See [LOCAL_VERIFICATION.md](LOCAL_VERIFICATION.md) for the bounded capture and its limitations.

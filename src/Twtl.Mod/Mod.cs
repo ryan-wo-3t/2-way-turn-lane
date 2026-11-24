@@ -19,6 +19,7 @@ namespace Twtl.Mod
         private MedianGraphFixtureSystem? medianGraphFixture;
         private SeparatorGraphFixtureSystem? separatorGraphFixture;
         private VirtualLaneGraphFixtureSystem? virtualLaneGraphFixture;
+        private ExperimentalLaneClosureSystem? experimentalLaneClosure;
         private SelectedRoadDiagnosticsSystem? diagnostics;
 
         public void OnLoad(UpdateSystem updateSystem)
@@ -28,7 +29,7 @@ namespace Twtl.Mod
             Options.RegisterInOptionsUI();
             GameManager.instance.localizationManager.AddSource("en-US", new EnglishLocale(Options));
             ApiAudit.Write(Log);
-            Log.Warn("Research build: functional shared-lane driving is unavailable. Experimental native two-way geometry is disabled by default and has no entry or route safeguards.");
+            Log.Warn("Research build: functional shared-lane driving is unavailable. Experimental center lanes are closed to native pathfinding while turn-only routing and conflict controls remain unverified.");
             // Options can be enabled after prefab initialization has gone idle. Road Builder
             // also registers its saved road prefabs from MainLoop after generation data exists.
             // AddPrefab creates Created entities immediately. Run before PrefabSystem so its
@@ -38,12 +39,15 @@ namespace Twtl.Mod
             updateSystem.UpdateBefore<MedianGraphFixtureSystem, PrefabSystem>(SystemUpdatePhase.MainLoop);
             updateSystem.UpdateBefore<SeparatorGraphFixtureSystem, PrefabSystem>(SystemUpdatePhase.MainLoop);
             updateSystem.UpdateBefore<VirtualLaneGraphFixtureSystem, PrefabSystem>(SystemUpdatePhase.MainLoop);
+            updateSystem.UpdateAfter<ExperimentalLaneClosureSystem, Game.Pathfind.LaneDataSystem>(SystemUpdatePhase.ModificationEnd);
+            updateSystem.UpdateBefore<ExperimentalLaneClosureSystem, Game.Pathfind.LanesModifiedSystem>(SystemUpdatePhase.ModificationEnd);
             updateSystem.UpdateAt<SelectedRoadDiagnosticsSystem>(SystemUpdatePhase.UIUpdate);
             research = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<ResearchLaneSystem>();
             nativeFixture = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<NativeFixtureSystem>();
             medianGraphFixture = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<MedianGraphFixtureSystem>();
             separatorGraphFixture = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<SeparatorGraphFixtureSystem>();
             virtualLaneGraphFixture = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<VirtualLaneGraphFixtureSystem>();
+            experimentalLaneClosure = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<ExperimentalLaneClosureSystem>();
             diagnostics = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<SelectedRoadDiagnosticsSystem>();
         }
 
@@ -54,6 +58,7 @@ namespace Twtl.Mod
             if (medianGraphFixture != null) medianGraphFixture.Enabled = false;
             if (separatorGraphFixture != null) separatorGraphFixture.Enabled = false;
             if (virtualLaneGraphFixture != null) virtualLaneGraphFixture.Enabled = false;
+            if (experimentalLaneClosure != null) experimentalLaneClosure.Enabled = false;
             if (diagnostics != null) diagnostics.Enabled = false;
             Options?.UnregisterInOptionsUI();
             Options = null;
