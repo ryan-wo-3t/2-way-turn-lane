@@ -26,6 +26,21 @@ namespace Twtl.Mod.Diagnostics
             {
                 Entity selected = World.GetOrCreateSystemManaged<SelectedInfoUISystem>().selectedEntity;
                 string selectionSource = "SelectedInfoUISystem";
+                if (selected != Entity.Null && EntityManager.Exists(selected) &&
+                    !EntityManager.HasBuffer<SubLane>(selected) && EntityManager.HasBuffer<AggregateElement>(selected))
+                {
+                    var aggregate = EntityManager.GetBuffer<AggregateElement>(selected, true);
+                    Mod.Log.Info($"[CAPTURE] selectedAggregate={selected} edgeCount={aggregate.Length}");
+                    if (aggregate.Length == 1)
+                    {
+                        Entity edge = aggregate[0].m_Edge;
+                        if (EntityManager.Exists(edge) && EntityManager.HasBuffer<SubLane>(edge))
+                        {
+                            selected = edge;
+                            selectionSource = "SelectedInfoUISystem.AggregateElement[0]";
+                        }
+                    }
+                }
                 if (selected == Entity.Null || !EntityManager.Exists(selected) || !EntityManager.HasBuffer<SubLane>(selected))
                 {
                     // Road Builder's editor owns its selected edge independently of the
