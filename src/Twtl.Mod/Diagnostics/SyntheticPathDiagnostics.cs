@@ -25,6 +25,8 @@ namespace Twtl.Mod.Diagnostics
             writeHandle.Complete();
             int candidates = 0;
             int queried = 0;
+            int openCandidates = 0;
+            int openQueried = 0;
             using (var query = manager.CreateEntityQuery(ComponentType.ReadOnly<Game.Net.CarLane>(),
                 ComponentType.ReadOnly<EdgeLane>()))
             using (var lanes = query.ToEntityArray(Allocator.Temp))
@@ -32,19 +34,31 @@ namespace Twtl.Mod.Diagnostics
                 foreach (Entity lane in lanes)
                 {
                     var car = manager.GetComponentData<Game.Net.CarLane>(lane);
-                    if (car.m_BlockageStart != 0 || car.m_BlockageEnd != byte.MaxValue ||
-                        (car.m_Flags & CarLaneFlags.Twoway) == 0 ||
-                        manager.HasComponent<SlaveLane>(lane) || !graph.GetEdge(lane, out var edge)) continue;
-                    if ((graph.GetFlags(edge) & (EdgeFlags.Forward | EdgeFlags.Backward)) !=
-                        (EdgeFlags.Forward | EdgeFlags.Backward)) continue;
-                    candidates++;
-                    if (queried >= 2) continue;
-                    queried++;
-                    ProbeClosed(graph, lane, 0.1f, 0.9f);
-                    ProbeClosed(graph, lane, 0.9f, 0.1f);
+                    if (manager.HasComponent<SlaveLane>(lane) || !graph.GetEdge(lane, out var edge)) continue;
+                    EdgeFlags flags = graph.GetFlags(edge);
+                    if (car.m_BlockageStart == 0 && car.m_BlockageEnd == byte.MaxValue &&
+                        (car.m_Flags & CarLaneFlags.Twoway) != 0 &&
+                        (flags & (EdgeFlags.Forward | EdgeFlags.Backward)) ==
+                        (EdgeFlags.Forward | EdgeFlags.Backward))
+                    {
+                        candidates++;
+                        if (queried >= 2) continue;
+                        queried++;
+                        ProbeLane(graph, lane, 0.1f, 0.9f, "PATH-CLOSED");
+                        ProbeLane(graph, lane, 0.9f, 0.1f, "PATH-CLOSED");
+                    }
+                    else if (car.m_BlockageStart == car.m_BlockageEnd &&
+                        (flags & EdgeFlags.Forward) != 0)
+                    {
+                        openCandidates++;
+                        if (openQueried >= 2) continue;
+                        openQueried++;
+                        ProbeLane(graph, lane, 0.1f, 0.9f, "PATH-CONTROL");
+                    }
                 }
             }
             Mod.Log.Info($"[PATH-CLOSED] fullyBlockedDirectTwoWayCandidates={candidates} queried={queried} maxQueries=4; native route result only, no vehicle test");
+            Mod.Log.Info($"[PATH-CONTROL] unblockedDirectForwardCandidates={openCandidates} queried={openQueried} maxQueries=2; a successful open-lane route is required to interpret closed-lane rejection");
         }
 
         public static void Write(World world, EntityManager manager, Entity[] lanes)
@@ -138,7 +152,7 @@ namespace Twtl.Mod.Diagnostics
             finally { action.Dispose(); }
         }
 
-        private static void ProbeClosed(NativePathfindData graph, Entity lane, float start, float end)
+        private static void ProbeLane(NativePathfindData graph, Entity lane, float start, float end, string label)
         {
             var parameters = new PathfindParameters
             {
@@ -164,7 +178,7 @@ namespace Twtl.Mod.Diagnostics
                     if (action.m_Path[i].m_Target == lane) traversedLane = true;
                 bool accepted = result.m_ErrorCode == 0 && result.m_PathLength > 0 &&
                     result.m_Distance > 0f && traversedLane;
-                Mod.Log.Info($"[PATH-CLOSED] lane={lane} start={start} end={end} accepted={accepted} traversedLane={traversedLane} pathLength={result.m_PathLength} pathEntries={action.m_Path.Length} distance={result.m_Distance} error={result.m_ErrorCode}; blocked-lane query only, no vehicle or turn test");
+                Mod.Log.Info($"[{label}] lane={lane} start={start} end={end} accepted={accepted} traversedLane={traversedLane} pathLength={result.m_PathLength} pathEntries={action.m_Path.Length} distance={result.m_Distance} error={result.m_ErrorCode}; synthetic lane query only, no vehicle or turn test");
             }
             finally { action.Dispose(); }
         }
