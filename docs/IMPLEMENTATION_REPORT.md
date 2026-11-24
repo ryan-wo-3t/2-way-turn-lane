@@ -8,6 +8,8 @@ A follow-up one-shot diagnostic now compares each selected car lane's blockage w
 
 The selected-road graph check was deployed, but the disconnected virtual road was not reliably selectable. The next staged revision adds a bounded global one-shot scan of native two-way or fully blocked car lanes, so selection is unnecessary. It compiles and passes official Unity IL/Burst processing against the installed assemblies with zero warnings and errors. Its runtime result remains unobserved.
 
+The selection-free revision was deployed and run in the Bonham autosave. A single native two-way car lane had full blockage in its component and in both primary and secondary graph specifications; the one-shot scan found zero mismatches. This confirms graph propagation for the observed experimental lane. The installed pathfinder code rejects traversal through a full blockage, but an actual path query and vehicle behavior on that lane have not been tested. The closure remains a safety stop, not functional TWTL routing.
+
 ## Bonham traffic baseline, 2026-11-23
 
 The owner's disposable `TWTL Traffic Test` city has ordinary Road Builder traffic. A read-only one-shot capture of its central four-lane road found 56 sub-lanes, 38 car lanes and no native two-way car lanes. Earlier route targets came from non-car lane occupants. A later `CarCurrentLane` world query found two active cars on the selected road, each with 12 near-term navigation segments and remaining native path data. No unsafe research fixture was connected or road layout changed. See [LOCAL_VERIFICATION.md](LOCAL_VERIFICATION.md) for the bounded capture and its limitations.
