@@ -27,6 +27,7 @@ namespace Twtl.Mod.RoadBuilderIntegration
         private Entity lastCity;
         private bool fullScanPending = true;
         private bool unresolvedCenter;
+        private bool lastPrototypeEnabled;
         private readonly Dictionary<Entity, bool> unsafeRoadPrefabs = new Dictionary<Entity, bool>();
 
         protected override void OnCreate()
@@ -55,6 +56,13 @@ namespace Twtl.Mod.RoadBuilderIntegration
             if (city != lastCity)
             {
                 lastCity = city;
+                fullScanPending = true;
+                unsafeRoadPrefabs.Clear();
+            }
+            bool prototypeEnabled = Mod.Options?.EnableDrivablePrototype == true;
+            if (prototypeEnabled != lastPrototypeEnabled)
+            {
+                lastPrototypeEnabled = prototypeEnabled;
                 fullScanPending = true;
                 unsafeRoadPrefabs.Clear();
             }
@@ -126,6 +134,10 @@ namespace Twtl.Mod.RoadBuilderIntegration
 
         private static bool HasExperimentalSection(INetworkBuilderPrefab built)
         {
+            // The separate, explicitly opted-in disposable-city road is the
+            // only experiment allowed past the hard pathfinder closure.
+            if (built.Config?.ID == VirtualLaneGraphFixtureSystem.DrivableRoadId &&
+                Mod.Options?.EnableDrivablePrototype == true) return false;
             var lanes = built.Config?.Lanes;
             if (lanes == null) return false;
             foreach (var lane in lanes)

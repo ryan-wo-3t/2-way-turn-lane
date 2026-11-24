@@ -1,5 +1,9 @@
 # Installed 1.6.4f1 verification
 
+## Drivable prototype test, 2026-11-23
+
+An opt-in, default-off Road Builder road `TWTL DRIVABLE PROTOTYPE - TEST CITY ONLY` is now built for car trials in the disposable Bonham city. It reuses the verified virtual-lane section. The native center-lane pathfinder closure exempts this road only while the option is enabled; disabling it closes the center again. The official local C# and Unity IL/Burst pipeline succeeded with zero warnings and errors. No in-game car use has yet been observed for this build. The prototype has no turn-only route gate, opponent reservation or verified safe braking; do not copy it into a valued save.
+
 ## Lake Street visual traffic report, 2026-11-23
 
 The owner supplied a screenshot of Lake Street in the disposable Bonham test city and reported that traffic appeared to use the middle in both directions, with many left-to-right vehicles using an inner lane. The screenshot is a road overlay, not a lane-prefab or vehicle-path record. In a subsequent live inspection of the named `TWTL Traffic Test` save, the Road Builder editor showed four ordinary car lanes and no experimental center section on the inspected 27 m east and 24 m west Lake Street pieces. Thus the screenshot does **not** establish that any car used a TWTL or that a TWTL was installed on those pieces. The add-on still lacks a verified turn-only routing rule for an experimental center lane; connected traffic acceptance remains blocked.

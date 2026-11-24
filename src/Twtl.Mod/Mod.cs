@@ -29,7 +29,7 @@ namespace Twtl.Mod
             Options.RegisterInOptionsUI();
             GameManager.instance.localizationManager.AddSource("en-US", new EnglishLocale(Options));
             ApiAudit.Write(Log);
-            Log.Warn("Research build: functional shared-lane driving is unavailable. Experimental center lanes are closed to native pathfinding while turn-only routing and conflict controls remain unverified.");
+            Log.Warn("Research build: functional shared-lane driving is unavailable. Experimental center lanes are closed to native pathfinding except the explicit disposable-city drivable prototype; turn-only routing and conflict controls remain unverified.");
             // Options can be enabled after prefab initialization has gone idle. Road Builder
             // also registers its saved road prefabs from MainLoop after generation data exists.
             // AddPrefab creates Created entities immediately. Run before PrefabSystem so its
