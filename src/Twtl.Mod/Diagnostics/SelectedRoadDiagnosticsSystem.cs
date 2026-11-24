@@ -28,6 +28,8 @@ namespace Twtl.Mod.Diagnostics
                 catch (Exception error) { Mod.Log.Error(error, "Read-only global blockage capture failed; continuing selected-road capture."); }
                 try { SyntheticPathDiagnostics.WriteClosedLaneProbe(World, EntityManager); }
                 catch (Exception error) { Mod.Log.Error(error, "Read-only blocked-lane route query failed; continuing selected-road capture."); }
+                try { TurnIntentDiagnostics.Write(EntityManager); }
+                catch (Exception error) { Mod.Log.Error(error, "Read-only turn-intent capture failed; continuing selected-road capture."); }
                 Entity selected = World.GetOrCreateSystemManaged<SelectedInfoUISystem>().selectedEntity;
                 string selectionSource = "SelectedInfoUISystem";
                 if (selected != Entity.Null && EntityManager.Exists(selected) &&
