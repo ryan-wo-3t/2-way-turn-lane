@@ -151,7 +151,12 @@ namespace Twtl.Mod.Diagnostics
             {
                 var navigation = EntityManager.GetBuffer<Game.Vehicles.CarNavigationLane>(vehicle, true);
                 Mod.Log.Info($"[VEHICLE] navigationLanes={navigation.Length} captured={Math.Min(navigation.Length, 16)}");
-                for (int i = 0; i < Math.Min(navigation.Length, 16); i++) Dump("navigationLane", navigation[i]);
+                for (int i = 0; i < Math.Min(navigation.Length, 16); i++)
+                {
+                    var segment = navigation[i];
+                    Dump("navigationLane", segment);
+                    if (i < 8) Mod.Log.Info("[NAV] " + RouteTargetDiagnostics.Describe(EntityManager, segment));
+                }
             }
             if (EntityManager.HasBuffer<Game.Pathfind.PathElement>(vehicle))
             {
