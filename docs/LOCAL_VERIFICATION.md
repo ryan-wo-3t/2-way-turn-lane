@@ -1,5 +1,13 @@
 # Installed 1.6.4f1 verification
 
+## Connected five-lane trial on Bonham, 2026-11-23
+
+Under the `2wtl - dev` playset, the 15 m V2 prototype replaced the eastern segment of the existing Lake Street corridor in the disposable Bonham test city. Road Builder identified the selected segment as `TWTL FIVE-LANE DRIVABLE PROTOTYPE - TEST CITY ONLY`. Cars and a truck appeared on its ordinary lanes. The narrow road moved its edges away from nearby buildings, which then showed disconnected-building warnings; it also acquired the street name Honeysuckle Lane. The named `TWTL Traffic Test` save was not manually overwritten.
+
+At `20:44:59`, the selected-road read-only capture found seven car lane entities, including one native two-way center lane `Entity(192334:3)` with `Forward, Backward, AllowMiddle` on both primary and secondary graph edges and no graph blockage. Direct synthetic paths along that lane succeeded in both directions (`pathLength=1`, `distance=88.50532`). The capture found 95 active cars globally but zero with `CarCurrentLane` on the selected segment at that instant. The screenshots show ordinary-lane traffic, not center-lane vehicle use. This verifies connected road placement and center graph openness; it does not establish turn-only routing or safe opposing use.
+
+V3 changes the experimental road to 27 m by adding the installed Road Builder `Sidewalk With Parking 6` section to each outer edge. It uses a new road ID so the saved V2 configuration is untouched, and only V3 is exempt from experimental center closure while enabled. The official local build against installed CS2 1.6.4f1 and Road Builder 0.8.0.0, including Unity IL and Burst processing, passed with zero warnings and errors. V3 is built locally but has not been deployed or tested in game yet.
+
 ## Drivable prototype test, 2026-11-23
 
 An opt-in, default-off Road Builder road `TWTL FIVE-LANE DRIVABLE PROTOTYPE - TEST CITY ONLY` is now built for car trials in the disposable Bonham city. It has four ordinary travel lanes and reuses the verified virtual-lane section for a fifth, shared center lane. The initial three-lane version registered at `20:17:31` but was not placed; its ID is not exempt from closure. The native center-lane pathfinder closure exempts only the five-lane road while the option is enabled; disabling it closes the center again. The official local C# and Unity IL/Burst pipeline succeeded with zero warnings and errors. No in-game car use has yet been observed for this five-lane build. The prototype has no turn-only route gate, opponent reservation or verified safe braking; do not copy it into a valued save.
