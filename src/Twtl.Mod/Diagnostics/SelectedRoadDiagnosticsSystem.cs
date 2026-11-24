@@ -8,6 +8,7 @@ using Game.Net;
 using Game.Simulation;
 using Game.UI.InGame;
 using RoadBuilder.Systems.UI;
+using Unity.Collections;
 using Unity.Entities;
 
 namespace Twtl.Mod.Diagnostics
@@ -62,8 +63,6 @@ namespace Twtl.Mod.Diagnostics
                 catch (Exception error) { Mod.Log.Error(error, "Read-only opposing occupancy capture failed; continuing native lane capture."); }
                 try { JunctionConnectionDiagnostics.Write(World, EntityManager, selected, identities); }
                 catch (Exception error) { Mod.Log.Error(error, "Read-only endpoint junction capture failed; continuing native lane capture."); }
-                int vehicleBudget = 32;
-                int sampledActiveCars = 0;
                 int capturedCarLaneObjects = 0;
                 foreach (Entity lane in identities)
                 {
@@ -95,60 +94,84 @@ namespace Twtl.Mod.Diagnostics
                         var objects = new LaneObject[Math.Min(occupants.Length, 64)];
                         for (int i = 0; i < objects.Length; i++) objects[i] = occupants[i];
                         if (carLane) capturedCarLaneObjects += objects.Length;
-                        foreach (var item in objects)
-                        {
-                            Dump("laneObject", item);
-                            Entity vehicle = item.m_LaneObject;
-                            // LaneObject also covers pedestrians, parked objects and other
-                            // occupants. Spend the vehicle budget only on active car lanes.
-                            if (!carLane || vehicleBudget <= 0 || !EntityManager.Exists(vehicle) ||
-                                !EntityManager.HasComponent<Game.Vehicles.CarCurrentLane>(vehicle)) continue;
-                            var current = EntityManager.GetComponentData<Game.Vehicles.CarCurrentLane>(vehicle);
-                            if (current.m_Lane == Entity.Null) continue;
-                            vehicleBudget--;
-                            sampledActiveCars++;
-                            Mod.Log.Info($"[VEHICLE] activeCar={vehicle} inspectedLane={lane} currentLane={current.m_Lane}");
-                            if (EntityManager.HasComponent<Game.Vehicles.CarNavigation>(vehicle))
-                                Dump("carNavigation", EntityManager.GetComponentData<Game.Vehicles.CarNavigation>(vehicle));
-                            Dump("carCurrentLane", current);
-                            if (EntityManager.HasComponent<Game.Objects.Moving>(vehicle))
-                                Dump("moving", EntityManager.GetComponentData<Game.Objects.Moving>(vehicle));
-                            if (EntityManager.HasComponent<Game.Objects.Transform>(vehicle))
-                                Dump("transform", EntityManager.GetComponentData<Game.Objects.Transform>(vehicle));
-                            if (EntityManager.HasComponent<Game.Vehicles.Blocker>(vehicle))
-                                Dump("nativeBlocker", EntityManager.GetComponentData<Game.Vehicles.Blocker>(vehicle));
-                            if (EntityManager.HasBuffer<Game.Vehicles.CarNavigationLane>(vehicle))
-                            {
-                                var navigation = EntityManager.GetBuffer<Game.Vehicles.CarNavigationLane>(vehicle, true);
-                                Mod.Log.Info($"[VEHICLE] navigationLanes={navigation.Length} captured={Math.Min(navigation.Length, 16)}");
-                                for (int i = 0; i < Math.Min(navigation.Length, 16); i++) Dump("navigationLane", navigation[i]);
-                            }
-                            if (EntityManager.HasBuffer<Game.Pathfind.PathElement>(vehicle))
-                            {
-                                int first = 0;
-                                if (EntityManager.HasComponent<Game.Pathfind.PathOwner>(vehicle))
-                                {
-                                    var owner = EntityManager.GetComponentData<Game.Pathfind.PathOwner>(vehicle);
-                                    Dump("pathOwner", owner);
-                                    first = owner.m_ElementIndex;
-                                }
-                                var path = EntityManager.GetBuffer<Game.Pathfind.PathElement>(vehicle, true);
-                                int remaining = first >= 0 && first <= path.Length ? path.Length - first : 0;
-                                Mod.Log.Info($"[VEHICLE] pathElements={path.Length} first={first} captured={Math.Min(remaining, 16)}; raw route data, turn intent UNKNOWN");
-                                for (int i = 0; i < Math.Min(remaining, 16); i++)
-                                {
-                                    var element = path[first + i];
-                                    Dump("pathElement", element);
-                                    if (i < 8) Mod.Log.Info("[ROUTE] " + RouteTargetDiagnostics.Describe(EntityManager, element));
-                                }
-                            }
-                        }
+                        foreach (var item in objects) Dump("laneObject", item);
                     }
                 }
-                Mod.Log.Info($"[CAPTURE] capturedCarLaneObjects={capturedCarLaneObjects} sampledActiveCars={sampledActiveCars} maxActiveCars=32; non-car occupants excluded from route inspection");
+                // Moving cars can be absent from the selected lane's LaneObject buffer
+                // at the instant of a capture. Query their authoritative current-lane
+                // component, then match that lane to this selected road.
+                using (var query = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<Game.Vehicles.CarCurrentLane>()))
+                using (var cars = query.ToEntityArray(Allocator.Temp))
+                {
+                    int activeCars = 0;
+                    int selectedCars = 0;
+                    int sampledSelectedCars = 0;
+                    for (int i = 0; i < cars.Length; i++)
+                    {
+                        Entity vehicle = cars[i];
+                        var current = EntityManager.GetComponentData<Game.Vehicles.CarCurrentLane>(vehicle);
+                        if (current.m_Lane == Entity.Null) continue;
+                        activeCars++;
+                        if (Array.IndexOf(identities, current.m_Lane) < 0) continue;
+                        selectedCars++;
+                        if (sampledSelectedCars++ < 32) WriteVehicle(vehicle, current, "selectedRoad");
+                    }
+                    int fallbackCars = 0;
+                    if (selectedCars == 0)
+                    {
+                        for (int i = 0; i < cars.Length && fallbackCars < 8; i++)
+                        {
+                            Entity vehicle = cars[i];
+                            var current = EntityManager.GetComponentData<Game.Vehicles.CarCurrentLane>(vehicle);
+                            if (current.m_Lane == Entity.Null) continue;
+                            WriteVehicle(vehicle, current, "otherRoad");
+                            fallbackCars++;
+                        }
+                    }
+                    Mod.Log.Info($"[CAPTURE] capturedCarLaneObjects={capturedCarLaneObjects} activeCars={activeCars} selectedRoadCars={selectedCars} sampledSelectedCars={Math.Min(selectedCars, 32)} fallbackOtherRoadCars={fallbackCars}; route inspection is read-only");
+                }
             }
             catch (Exception error) { Mod.Log.Error(error, "Read-only lane capture failed"); }
             finally { Mod.Log.Info($"[CAPTURE] elapsedMs={timer.Elapsed.TotalMilliseconds:F3}; this is diagnostic capture time, not traffic-system overhead."); }
+        }
+
+        private void WriteVehicle(Entity vehicle, Game.Vehicles.CarCurrentLane current, string scope)
+        {
+            Mod.Log.Info($"[VEHICLE] activeCar={vehicle} scope={scope} currentLane={current.m_Lane}");
+            if (EntityManager.HasComponent<Game.Vehicles.CarNavigation>(vehicle))
+                Dump("carNavigation", EntityManager.GetComponentData<Game.Vehicles.CarNavigation>(vehicle));
+            Dump("carCurrentLane", current);
+            if (EntityManager.HasComponent<Game.Objects.Moving>(vehicle))
+                Dump("moving", EntityManager.GetComponentData<Game.Objects.Moving>(vehicle));
+            if (EntityManager.HasComponent<Game.Objects.Transform>(vehicle))
+                Dump("transform", EntityManager.GetComponentData<Game.Objects.Transform>(vehicle));
+            if (EntityManager.HasComponent<Game.Vehicles.Blocker>(vehicle))
+                Dump("nativeBlocker", EntityManager.GetComponentData<Game.Vehicles.Blocker>(vehicle));
+            if (EntityManager.HasBuffer<Game.Vehicles.CarNavigationLane>(vehicle))
+            {
+                var navigation = EntityManager.GetBuffer<Game.Vehicles.CarNavigationLane>(vehicle, true);
+                Mod.Log.Info($"[VEHICLE] navigationLanes={navigation.Length} captured={Math.Min(navigation.Length, 16)}");
+                for (int i = 0; i < Math.Min(navigation.Length, 16); i++) Dump("navigationLane", navigation[i]);
+            }
+            if (EntityManager.HasBuffer<Game.Pathfind.PathElement>(vehicle))
+            {
+                int first = 0;
+                if (EntityManager.HasComponent<Game.Pathfind.PathOwner>(vehicle))
+                {
+                    var owner = EntityManager.GetComponentData<Game.Pathfind.PathOwner>(vehicle);
+                    Dump("pathOwner", owner);
+                    first = owner.m_ElementIndex;
+                }
+                var path = EntityManager.GetBuffer<Game.Pathfind.PathElement>(vehicle, true);
+                int remaining = first >= 0 && first <= path.Length ? path.Length - first : 0;
+                Mod.Log.Info($"[VEHICLE] pathElements={path.Length} first={first} captured={Math.Min(remaining, 16)}; raw route data, turn intent UNKNOWN");
+                for (int i = 0; i < Math.Min(remaining, 16); i++)
+                {
+                    var element = path[first + i];
+                    Dump("pathElement", element);
+                    if (i < 8) Mod.Log.Info("[ROUTE] " + RouteTargetDiagnostics.Describe(EntityManager, element));
+                }
+            }
         }
 
         private static void Dump<T>(string label, T data) where T : struct
