@@ -1,5 +1,9 @@
 # Installed 1.6.4f1 verification
 
+## Route trace update, 2026-11-25
+
+The traffic monitor now labels each observed V3 center-lane entry using the native `CarNavigationLane` sequence: `JunctionTurn`, `ThroughOrMerge`, `PossibleRoadsideTurn`, `TooLong`, or `Incomplete`. It counts these shapes in the run summary. The classifier uses the installed 1.6.4f1 navigation fields and the existing 50 m policy. It deliberately grants no driving permission. In the installed `CarNavigationSystem`, turn flags come from native car-lane flags or parking-lane flags; a turn flag alone is not a verified roadside destination. The installed `PathUtils` and `PathfindJobs` confirm that the center's `Forbidden` cost does not provide per-vehicle turn-only routing. The core suite passed 39 tests, and the official mod build against the installed CS2/Road Builder assemblies passed with zero warnings and errors. This change has not yet been observed in a live game session.
+
 ## Bonham V3 junction gate and traffic, 2026-11-25
 
 With the `2wtl - dev` playset, CS2 1.6.4f1 loaded the latest `24-November-10-18-28` Bonham autosave (population 1,139). The named `TWTL Traffic Test` save was not selected or manually overwritten. Road Builder confirmed the eastern Honeysuckle Lane segment was the 27 m V3 prototype with two ordinary lanes per direction and the 3 m shared center. The gate logged 15 center-endpoint node-lane closures and applied native `Forbidden` route cost to the center. The selected segment had 133 sub-lanes, but the one-shot diagnostic copied only the first 64, yielding the misleading `selectedCenterLanes=0` and no center endpoint matches. Its junction output did show full lane and primary graph blockage on several gated node lanes. It did not verify every connector or the center graph edge.

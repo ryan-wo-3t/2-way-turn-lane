@@ -5,6 +5,7 @@ using Game.Net;
 using Game.Vehicles;
 using RoadBuilder.Systems;
 using RoadBuilder.Systems.UI;
+using Twtl.Core;
 using Twtl.Mod.RoadBuilderIntegration;
 using Unity.Collections;
 using Unity.Entities;
@@ -35,6 +36,7 @@ namespace Twtl.Mod.Diagnostics
         private int centerCarFrames;
         private int centerEntries;
         private int opposingSamples;
+        private readonly Dictionary<TraceResult, int> routeShapes = new Dictionary<TraceResult, int>();
         private bool running;
 
         private sealed class CenterVisit
@@ -105,6 +107,7 @@ namespace Twtl.Mod.Diagnostics
             currentlyOnCenter.Clear();
             nextOnCenter.Clear();
             centerVisits.Clear();
+            routeShapes.Clear();
             samples = ordinaryCarFrames = centerCarFrames = centerEntries = opposingSamples = 0;
             var subLanes = EntityManager.GetBuffer<SubLane>(owner, true);
             for (int i = 0; i < subLanes.Length; i++)
@@ -160,7 +163,10 @@ namespace Twtl.Mod.Diagnostics
                         else if (visit.Direction < 0) backwardCenter++;
                         if (currentlyOnCenter.Contains(vehicle)) continue;
                         centerEntries++;
-                        Mod.Log.Info($"[TRAFFIC-MONITOR] centerEntry vehicle={vehicle} lane={current.m_Lane} curvePosition={current.m_CurvePosition.x:F3} navigation={DescribeNavigation(vehicle)}; intent is observational, not turn authorization.");
+                        TraceResult shape = AssessRouteShape(vehicle);
+                        routeShapes.TryGetValue(shape, out int shapeCount);
+                        routeShapes[shape] = shapeCount + 1;
+                        Mod.Log.Info($"[TRAFFIC-MONITOR] centerEntry vehicle={vehicle} lane={current.m_Lane} curvePosition={current.m_CurvePosition.x:F3} routeShape={shape} navigation={DescribeNavigation(vehicle)}; possible roadside turns are not authorized movements.");
                     }
                 }
             }
@@ -197,11 +203,50 @@ namespace Twtl.Mod.Diagnostics
             return string.Join(" | ", parts);
         }
 
+        private TraceResult AssessRouteShape(Entity vehicle)
+        {
+            if (!EntityManager.HasBuffer<CarNavigationLane>(vehicle)) return TraceResult.Incomplete;
+            var navigation = EntityManager.GetBuffer<CarNavigationLane>(vehicle, true);
+            int count = Math.Min(navigation.Length, 16);
+            var steps = new TraceStep[count];
+            int centerIndex = -1;
+            for (int i = 0; i < count; i++)
+            {
+                var item = navigation[i];
+                Entity lane = item.m_Lane;
+                TraceLaneKind kind = TraceLaneKind.Unknown;
+                double metres = 0;
+                if (EntityManager.Exists(lane))
+                {
+                    if (centerLanes.Contains(lane))
+                    {
+                        kind = TraceLaneKind.SharedCenter;
+                        if (centerIndex < 0) centerIndex = i;
+                    }
+                    else if (EntityManager.HasComponent<NodeLane>(lane)) kind = TraceLaneKind.Junction;
+                    else if (EntityManager.HasComponent<ConnectionLane>(lane)) kind = TraceLaneKind.RoadsideConnection;
+                    else if (EntityManager.HasComponent<ParkingLane>(lane)) kind = TraceLaneKind.Parking;
+                    else if (EntityManager.HasComponent<EdgeLane>(lane)) kind = TraceLaneKind.Ordinary;
+                    if (EntityManager.HasComponent<Curve>(lane))
+                        metres = EntityManager.GetComponentData<Curve>(lane).m_Length *
+                            Math.Abs(item.m_CurvePosition.y - item.m_CurvePosition.x);
+                }
+                var flags = item.m_Flags;
+                bool left = (flags & Game.Vehicles.CarLaneFlags.TurnLeft) != 0;
+                bool right = (flags & Game.Vehicles.CarLaneFlags.TurnRight) != 0;
+                TurnSide side = left == right ? TurnSide.Unknown : left ? TurnSide.Left : TurnSide.Right;
+                steps[i] = new TraceStep(kind, metres, side);
+            }
+            // The current prototype is a right-hand-traffic road. Native
+            // navigation does not itself prove a legal destination or gap.
+            return RouteTracePolicy.Assess(steps, centerIndex, Handedness.Right, new TwtlOptions());
+        }
+
         private void Finish(string reason)
         {
             if (!running) return;
             running = false;
-            Mod.Log.Info($"[TRAFFIC-MONITOR] Finished reason={reason} owner={owner} samples={samples} ordinaryCarFrames={ordinaryCarFrames} centerCarFrames={centerCarFrames} uniqueOrdinaryCars={seenOrdinaryCars.Count} uniqueCenterCars={seenCenterCars.Count} centerEntries={centerEntries} opposingSamples={opposingSamples} centerStillObserved={centerVisits.Count}; no turn-only or conflict-safety claim.");
+            Mod.Log.Info($"[TRAFFIC-MONITOR] Finished reason={reason} owner={owner} samples={samples} ordinaryCarFrames={ordinaryCarFrames} centerCarFrames={centerCarFrames} uniqueOrdinaryCars={seenOrdinaryCars.Count} uniqueCenterCars={seenCenterCars.Count} centerEntries={centerEntries} opposingSamples={opposingSamples} centerStillObserved={centerVisits.Count} routeShapes={string.Join(",", routeShapes)}; no turn-only or conflict-safety claim.");
         }
     }
 }

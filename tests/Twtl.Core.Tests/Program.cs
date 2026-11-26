@@ -324,6 +324,30 @@ internal static class Program
             var plan = Gap(new LaneVehicle(1, 100, 10, 4), new[] { new LaneVehicle(2, 110, 0, 4) });
             Assert(!plan.GapAvailable);
         });
+        Test("route trace separates junction and through trips from roadside candidates", () =>
+        {
+            var center = new TraceStep(TraceLaneKind.SharedCenter, 27);
+            Assert(RouteTracePolicy.Assess(new[] { center, new TraceStep(TraceLaneKind.Junction, 5, TurnSide.Left) },
+                0, Handedness.Right, Options) == TraceResult.JunctionTurn);
+            Assert(RouteTracePolicy.Assess(new[] { center, new TraceStep(TraceLaneKind.Ordinary, 27) },
+                0, Handedness.Right, Options) == TraceResult.ThroughOrMerge);
+            Assert(RouteTracePolicy.Assess(new[] { center, new TraceStep(TraceLaneKind.RoadsideConnection, 3, TurnSide.Left) },
+                0, Handedness.Right, Options) == TraceResult.PossibleRoadsideTurn);
+            Assert(RouteTracePolicy.Assess(new[] { center, new TraceStep(TraceLaneKind.Parking, 3, TurnSide.Right) },
+                0, Handedness.Left, Options) == TraceResult.PossibleRoadsideTurn);
+        });
+        Test("route trace rejects incomplete, wrong-side and long center travel", () =>
+        {
+            Assert(RouteTracePolicy.Assess(new[] { new TraceStep(TraceLaneKind.SharedCenter, 27) },
+                0, Handedness.Right, Options) == TraceResult.Incomplete);
+            Assert(RouteTracePolicy.Assess(new[] { new TraceStep(TraceLaneKind.SharedCenter, 27),
+                new TraceStep(TraceLaneKind.RoadsideConnection, 3, TurnSide.Right) },
+                0, Handedness.Right, Options) == TraceResult.Incomplete);
+            Assert(RouteTracePolicy.Assess(new[] { new TraceStep(TraceLaneKind.SharedCenter, 30),
+                new TraceStep(TraceLaneKind.SharedCenter, 25),
+                new TraceStep(TraceLaneKind.RoadsideConnection, 3, TurnSide.Left) },
+                0, Handedness.Right, Options) == TraceResult.TooLong);
+        });
         Console.WriteLine($"RESULT {passed} passed, {failed} failed");
         return failed == 0 ? 0 : 1;
     }
