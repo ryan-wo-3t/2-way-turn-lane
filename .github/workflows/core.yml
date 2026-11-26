@@ -1,0 +1,18 @@
+name: Core verification
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Build engine-independent library and test executable
+        run: dotnet build tests/Twtl.Core.Tests/Twtl.Core.Tests.csproj -c Release
+      - name: Run safety calculations and lifecycle tests
+        run: dotnet run --project tests/Twtl.Core.Tests -c Release --no-build
+      - name: Run isolated reservation model experiment
+        run: dotnet run --project tests/Twtl.Core.Tests -c Release --no-build -- --experiment
