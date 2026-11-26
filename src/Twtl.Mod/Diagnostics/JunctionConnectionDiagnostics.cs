@@ -58,16 +58,15 @@ namespace Twtl.Mod.Diagnostics
                     return;
                 }
                 var buffer = manager.GetBuffer<SubLane>(node, true);
-                int captured = Math.Min(buffer.Length, MaximumNodeLanes);
-                var identities = new Entity[captured];
-                for (int i = 0; i < captured; i++) identities[i] = buffer[i].m_SubLane;
+                int detailed = 0;
                 int carCount = 0;
                 int centerEndpointMatches = 0;
                 int centerUTurnFlags = 0;
                 int centerUnsafeFlags = 0;
                 int centerTwowayFlags = 0;
-                foreach (Entity laneEntity in identities)
+                for (int i = 0; i < buffer.Length; i++)
                 {
+                    Entity laneEntity = buffer[i].m_SubLane;
                     if (!manager.Exists(laneEntity) || !manager.HasComponent<Lane>(laneEntity) ||
                         !manager.HasComponent<Game.Net.CarLane>(laneEntity)) continue;
                     carCount++;
@@ -90,12 +89,24 @@ namespace Twtl.Mod.Diagnostics
                         if ((car.m_Flags & CarLaneFlags.Twoway) != 0) centerTwowayFlags++;
                     }
                     string graphFlags = "unavailable";
+                    string graphBlockage = "unavailable";
                     if (hasGraph)
-                        graphFlags = graph.GetEdge(laneEntity, out var id)
-                            ? graph.GetFlags(id).ToString() : "no-primary-edge";
-                    Mod.Log.Info($"[JUNCTION] side={side} node={node} lane={laneEntity} nodeLane={manager.HasComponent<NodeLane>(laneEntity)} carFlags={car.m_Flags} graphFlags={graphFlags} matchesCenterStart={centerStart} matchesCenterEnd={centerEnd} start={Describe(lane.m_StartNode)} end={Describe(lane.m_EndNode)}");
+                    {
+                        if (graph.GetEdge(laneEntity, out var id))
+                        {
+                            graphFlags = graph.GetFlags(id).ToString();
+                            var specification = graph.GetReadOnlyData().GetEdge(id).m_Specification;
+                            graphBlockage = $"{specification.m_BlockageStart}..{specification.m_BlockageEnd} hasRule={(specification.m_Rules & RuleFlags.HasBlockage) != 0}";
+                        }
+                        else graphFlags = "no-primary-edge";
+                    }
+                    if (detailed < MaximumNodeLanes || centerStart || centerEnd)
+                    {
+                        detailed++;
+                        Mod.Log.Info($"[JUNCTION] side={side} node={node} lane={laneEntity} nodeLane={manager.HasComponent<NodeLane>(laneEntity)} carFlags={car.m_Flags} laneBlockage={car.m_BlockageStart}..{car.m_BlockageEnd} graphFlags={graphFlags} graphBlockage={graphBlockage} matchesCenterStart={centerStart} matchesCenterEnd={centerEnd} start={Describe(lane.m_StartNode)} end={Describe(lane.m_EndNode)}");
+                    }
                 }
-                Mod.Log.Info($"[JUNCTION] side={side} node={node} subLanes={buffer.Length} captured={captured} carLanes={carCount} exactCenterEndpointMatches={centerEndpointMatches} centerMatchesWithUTurnFlag={centerUTurnFlags} centerMatchesWithUnsafeFlag={centerUnsafeFlags} centerMatchesWithTwowayFlag={centerTwowayFlags}; path-node equality and flags are not a route or safety test");
+                Mod.Log.Info($"[JUNCTION] side={side} node={node} subLanes={buffer.Length} detailed={detailed} carLanes={carCount} exactCenterEndpointMatches={centerEndpointMatches} centerMatchesWithUTurnFlag={centerUTurnFlags} centerMatchesWithUnsafeFlag={centerUnsafeFlags} centerMatchesWithTwowayFlag={centerTwowayFlags}; blockage and path-node evidence only, route and safety need testing");
             }
         }
 

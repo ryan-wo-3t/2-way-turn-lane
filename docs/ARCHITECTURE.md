@@ -12,13 +12,13 @@ flowchart LR
   Core -. no actuator implemented .-> Native[Native routing and navigation]
 ```
 
-There are no Harmony patches, navigation replacements, ECS writes to traffic components or overlapping road networks. API auditing uses reflection only to read signatures. A found member never enables a traffic feature.
+There are no Harmony patches, navigation replacements or overlapping road networks. The research closure writes native `CarLane` blockage intervals and requests path graph updates. The connected V3 prototype also gates node connector lanes whose exact path endpoint matches its center lane, to test whether junction through routing can be excluded. This new gate is compile-verified but has no live path or vehicle result. API auditing uses reflection only to read signatures; a found member never enables a traffic feature.
 
 ## Geometry and validation
 
 Cross-section strips are left-to-right looking along the segment's forward tangent. In RHT, backward ordinary travel is on the left and forward travel on the right; LHT reverses these sides. Shared physical width is one strip, independent of lane count and parity. The nearest ordinary travel lane on each side must have legal access. Continuous medians/barriers in those access corridors are INVALID. Paint is permeable. Tram crossing feasibility is evidence, not inferred from a track name. Crossable tracks remain WARNING until their native connections and conflicts are verified. Outer sidewalks are irrelevant to centre access.
 
-Configuration VALID means physically eligible based on supplied classification. Runtime validation is separate and unknown evidence blocks admissions. There is no automatic extraction of all physical classifications or an active Road Builder pre-generation callback in this build. Only a closed section is exposed, so a bad proposed layout cannot activate shared-lane traffic.
+Configuration VALID means physically eligible based on supplied classification. Runtime validation is separate and unknown evidence blocks admissions. There is no automatic extraction of all physical classifications or an active Road Builder pre-generation callback in this build. Experimental sections remain closed by default; the separate connected V3 road requires an explicit disposable-city opt-in and is not a functional shared turn lane.
 
 Runtime adapters must verify geometry/topology in both directions, turn-only routing, vanilla stopping behaviour, enforced entry control, conflict handling, intersection exclusion and applicable tram conflicts. They must also reconcile actual occupancy. The current core API trusts its caller's evidence and cannot inspect a game road.
 

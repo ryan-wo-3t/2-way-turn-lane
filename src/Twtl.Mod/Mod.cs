@@ -66,7 +66,9 @@ namespace Twtl.Mod
             if (trafficMonitor != null) trafficMonitor.Enabled = false;
             Options?.UnregisterInOptionsUI();
             Options = null;
-            // No traffic writes, navigation patches or transient reservations exist in this build.
+            // The pathfinder blockage gate writes lane data. Live prefab removal
+            // or blanket unblock on disposal could expose an unsafe saved road.
+            // No navigation patches or transient reservations exist yet.
             // Registered prefabs belong to the world; removing a live prefab could damage roads.
         }
     }
