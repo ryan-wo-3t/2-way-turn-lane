@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
@@ -13,7 +14,7 @@ using Unity.Entities;
 
 namespace Twtl.Mod.Diagnostics
 {
-    /// <summary>Explicit one-shot read-only capture, bounded to the selected road's first 64 lanes.</summary>
+    /// <summary>Explicit one-shot read-only capture of the first 64 lanes plus late two-way car lanes.</summary>
     public partial class SelectedRoadDiagnosticsSystem : GameSystemBase
     {
         protected override void OnUpdate()
@@ -68,10 +69,25 @@ namespace Twtl.Mod.Diagnostics
                 // Captures may stall simulation and are never performed continuously.
                 var lanes = EntityManager.GetBuffer<SubLane>(selected, true);
                 int count = Math.Min(lanes.Length, 64);
-                // Copy identities before any subsequent EntityManager calls invalidate buffer handles.
-                var identities = new Entity[count];
-                for (int i = 0; i < count; i++) identities[i] = lanes[i].m_SubLane;
-                Mod.Log.Info($"[CAPTURE] lanes={lanes.Length} captured={count}");
+                // Copy the whole buffer before component reads invalidate its handle.
+                // Road Builder can place the shared center after the first 64
+                // sublanes, so always include those lanes in the bounded probe.
+                var allIdentities = new Entity[lanes.Length];
+                for (int i = 0; i < allIdentities.Length; i++) allIdentities[i] = lanes[i].m_SubLane;
+                var captured = new List<Entity>(count + 16);
+                for (int i = 0; i < count; i++) captured.Add(allIdentities[i]);
+                int lateCenters = 0;
+                int omittedCenters = 0;
+                for (int i = count; i < allIdentities.Length; i++)
+                {
+                    Entity lane = allIdentities[i];
+                    if (!EntityManager.Exists(lane) || !EntityManager.HasComponent<Game.Net.CarLane>(lane) ||
+                        (EntityManager.GetComponentData<Game.Net.CarLane>(lane).m_Flags & CarLaneFlags.Twoway) == 0) continue;
+                    if (lateCenters < 16) { captured.Add(lane); lateCenters++; }
+                    else omittedCenters++;
+                }
+                var identities = captured.ToArray();
+                Mod.Log.Info($"[CAPTURE] lanes={allIdentities.Length} captured={identities.Length} lateTwoWayCarLanes={lateCenters} omittedTwoWayCarLanes={omittedCenters}");
                 try { RoadBuilderConfigurationDiagnostics.Write(World, EntityManager, selected); }
                 catch (Exception error) { Mod.Log.Error(error, "Road Builder configuration capture failed; continuing native lane capture."); }
                 try { NativeLanePrefabDiagnostics.Write(World); }

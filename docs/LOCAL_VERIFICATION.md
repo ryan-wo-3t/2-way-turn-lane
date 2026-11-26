@@ -1,5 +1,13 @@
 # Installed 1.6.4f1 verification
 
+## Bonham V3 junction gate and traffic, 2026-11-25
+
+With the `2wtl - dev` playset, CS2 1.6.4f1 loaded the latest `24-November-10-18-28` Bonham autosave (population 1,139). The named `TWTL Traffic Test` save was not selected or manually overwritten. Road Builder confirmed the eastern Honeysuckle Lane segment was the 27 m V3 prototype with two ordinary lanes per direction and the 3 m shared center. The gate logged 15 center-endpoint node-lane closures and applied native `Forbidden` route cost to the center. The selected segment had 133 sub-lanes, but the one-shot diagnostic copied only the first 64, yielding the misleading `selectedCenterLanes=0` and no center endpoint matches. Its junction output did show full lane and primary graph blockage on several gated node lanes. It did not verify every connector or the center graph edge.
+
+The two-minute actual-car monitor ran on the same segment (`Entity(82677:1)`, center `Entity(67059:1)`). It recorded 120 samples, 19 distinct ordinary-lane cars, **eight distinct center-lane cars**, seven center exits, and zero samples of simultaneous opposite center motion. Six observed center visits moved from about curve position 0.87-1.00 toward 0.00-0.13 and exited to a roundabout node lane; one initial car had no measurable displacement and one remained on the lane at the end. This is sustained near-full-length center travel toward the roundabout, not demonstrated roadside turning. Two cars were already on the center when sampling began, and later entries may have retained routes calculated before the gate. This live result does **not** establish that the junction gate prevents through use, allows legitimate turns, or prevents opposing conflicts. V3 remains unsafe for normal play.
+
+The one-shot capture has since been changed to include up to 16 two-way car lanes beyond its first 64 sub-lanes. The fix compiled against the installed CS2 and Road Builder assemblies with zero C# and Unity IL/Burst warnings or errors. It is staged only; CS2 was still running, so it has not been deployed or live-verified.
+
 ## Connected five-lane trial on Bonham, 2026-11-23
 
 Under the `2wtl - dev` playset, the 15 m V2 prototype replaced the eastern segment of the existing Lake Street corridor in the disposable Bonham test city. Road Builder identified the selected segment as `TWTL FIVE-LANE DRIVABLE PROTOTYPE - TEST CITY ONLY`. Cars and a truck appeared on its ordinary lanes. The narrow road moved its edges away from nearby buildings, which then showed disconnected-building warnings; it also acquired the street name Honeysuckle Lane. The named `TWTL Traffic Test` save was not manually overwritten.
