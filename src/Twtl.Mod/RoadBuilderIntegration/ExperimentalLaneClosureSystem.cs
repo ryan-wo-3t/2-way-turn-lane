@@ -107,6 +107,8 @@ namespace Twtl.Mod.RoadBuilderIntegration
                             if (CloseLane(lane)) uncertainPrototypesClosed++;
                             Mod.Log.Warn($"[SAFETY] V3 center {lane} lacks a confirmed junction connector at one or both ends; center path closed instead of assuming safe routing.");
                         }
+                        else if (AddForbiddenRouteCost(lane))
+                            Mod.Log.Info($"[JUNCTION-GATE] V3 center={lane} uses the native Forbidden route cost; this is a preference, not a turn-only prohibition.");
                         continue;
                     }
                     if (!IsExperimentalCenter(lane)) continue;
@@ -128,6 +130,19 @@ namespace Twtl.Mod.RoadBuilderIntegration
             if (car.m_BlockageStart == 0 && car.m_BlockageEnd == byte.MaxValue) return false;
             car.m_BlockageStart = 0;
             car.m_BlockageEnd = byte.MaxValue;
+            EntityManager.SetComponentData(lane, car);
+            if (!EntityManager.HasComponent<Created>(lane) &&
+                !EntityManager.HasComponent<Updated>(lane) &&
+                !EntityManager.HasComponent<PathfindUpdated>(lane))
+                EntityManager.AddComponent<PathfindUpdated>(lane);
+            return true;
+        }
+
+        private bool AddForbiddenRouteCost(Entity lane)
+        {
+            var car = EntityManager.GetComponentData<Game.Net.CarLane>(lane);
+            if ((car.m_Flags & CarLaneFlags.Forbidden) != 0) return false;
+            car.m_Flags |= CarLaneFlags.Forbidden;
             EntityManager.SetComponentData(lane, car);
             if (!EntityManager.HasComponent<Created>(lane) &&
                 !EntityManager.HasComponent<Updated>(lane) &&
