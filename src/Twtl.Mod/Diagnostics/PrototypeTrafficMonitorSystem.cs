@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Game;
 using Game.Net;
+using Game.Pathfind;
 using Game.Vehicles;
 using RoadBuilder.Systems;
 using RoadBuilder.Systems.UI;
@@ -25,6 +26,7 @@ namespace Twtl.Mod.Diagnostics
         private readonly HashSet<Entity> centerLanes = new HashSet<Entity>();
         private readonly HashSet<Entity> seenOrdinaryCars = new HashSet<Entity>();
         private readonly HashSet<Entity> seenCenterCars = new HashSet<Entity>();
+        private readonly HashSet<Entity> plannedCenterCars = new HashSet<Entity>();
         private readonly HashSet<Entity> currentlyOnCenter = new HashSet<Entity>();
         private readonly HashSet<Entity> nextOnCenter = new HashSet<Entity>();
         private readonly Dictionary<Entity, CenterVisit> centerVisits = new Dictionary<Entity, CenterVisit>();
@@ -37,6 +39,7 @@ namespace Twtl.Mod.Diagnostics
         private int centerEntries;
         private int opposingSamples;
         private readonly Dictionary<TraceResult, int> routeShapes = new Dictionary<TraceResult, int>();
+        private readonly Dictionary<TraceResult, int> plannedRouteShapes = new Dictionary<TraceResult, int>();
         private bool running;
 
         private sealed class CenterVisit
@@ -104,10 +107,12 @@ namespace Twtl.Mod.Diagnostics
             centerLanes.Clear();
             seenOrdinaryCars.Clear();
             seenCenterCars.Clear();
+            plannedCenterCars.Clear();
             currentlyOnCenter.Clear();
             nextOnCenter.Clear();
             centerVisits.Clear();
             routeShapes.Clear();
+            plannedRouteShapes.Clear();
             samples = ordinaryCarFrames = centerCarFrames = centerEntries = opposingSamples = 0;
             var subLanes = EntityManager.GetBuffer<SubLane>(owner, true);
             for (int i = 0; i < subLanes.Length; i++)
@@ -146,6 +151,14 @@ namespace Twtl.Mod.Diagnostics
                     {
                         ordinary++;
                         seenOrdinaryCars.Add(vehicle);
+                        if (!plannedCenterCars.Contains(vehicle) && TryAssessRouteShape(vehicle, out var plannedShape))
+                        {
+                            plannedCenterCars.Add(vehicle);
+                            plannedRouteShapes.TryGetValue(plannedShape, out int count);
+                            plannedRouteShapes[plannedShape] = count + 1;
+                            if (plannedCenterCars.Count <= 12)
+                                Mod.Log.Info($"[TRAFFIC-MONITOR] plannedCenter vehicle={vehicle} currentLane={current.m_Lane} routeShape={plannedShape}; planned route is observational, not turn authorization.");
+                        }
                     }
                     else if (centerLanes.Contains(current.m_Lane))
                     {
@@ -163,7 +176,8 @@ namespace Twtl.Mod.Diagnostics
                         else if (visit.Direction < 0) backwardCenter++;
                         if (currentlyOnCenter.Contains(vehicle)) continue;
                         centerEntries++;
-                        TraceResult shape = AssessRouteShape(vehicle);
+                        TraceResult shape = TryAssessRouteShape(vehicle, out var observedShape)
+                            ? observedShape : TraceResult.Incomplete;
                         routeShapes.TryGetValue(shape, out int shapeCount);
                         routeShapes[shape] = shapeCount + 1;
                         Mod.Log.Info($"[TRAFFIC-MONITOR] centerEntry vehicle={vehicle} lane={current.m_Lane} curvePosition={current.m_CurvePosition.x:F3} routeShape={shape} navigation={DescribeNavigation(vehicle)}; possible roadside turns are not authorized movements.");
@@ -203,50 +217,88 @@ namespace Twtl.Mod.Diagnostics
             return string.Join(" | ", parts);
         }
 
-        private TraceResult AssessRouteShape(Entity vehicle)
+        private bool TryAssessRouteShape(Entity vehicle, out TraceResult result)
         {
-            if (!EntityManager.HasBuffer<CarNavigationLane>(vehicle)) return TraceResult.Incomplete;
-            var navigation = EntityManager.GetBuffer<CarNavigationLane>(vehicle, true);
-            int count = Math.Min(navigation.Length, 16);
-            var steps = new TraceStep[count];
-            int centerIndex = -1;
-            for (int i = 0; i < count; i++)
+            result = TraceResult.Incomplete;
+            if (EntityManager.HasBuffer<CarNavigationLane>(vehicle))
             {
-                var item = navigation[i];
-                Entity lane = item.m_Lane;
-                TraceLaneKind kind = TraceLaneKind.Unknown;
-                double metres = 0;
-                if (EntityManager.Exists(lane))
+                var navigation = EntityManager.GetBuffer<CarNavigationLane>(vehicle, true);
+                int count = Math.Min(navigation.Length, 16);
+                var steps = new TraceStep[count];
+                int navigationCenterIndex = -1;
+                for (int i = 0; i < count; i++)
                 {
-                    if (centerLanes.Contains(lane))
-                    {
-                        kind = TraceLaneKind.SharedCenter;
-                        if (centerIndex < 0) centerIndex = i;
-                    }
-                    else if (EntityManager.HasComponent<NodeLane>(lane)) kind = TraceLaneKind.Junction;
-                    else if (EntityManager.HasComponent<ConnectionLane>(lane)) kind = TraceLaneKind.RoadsideConnection;
-                    else if (EntityManager.HasComponent<ParkingLane>(lane)) kind = TraceLaneKind.Parking;
-                    else if (EntityManager.HasComponent<EdgeLane>(lane)) kind = TraceLaneKind.Ordinary;
-                    if (EntityManager.HasComponent<Curve>(lane))
-                        metres = EntityManager.GetComponentData<Curve>(lane).m_Length *
-                            Math.Abs(item.m_CurvePosition.y - item.m_CurvePosition.x);
+                    var item = navigation[i];
+                    if (centerLanes.Contains(item.m_Lane) && navigationCenterIndex < 0) navigationCenterIndex = i;
+                    steps[i] = MakeTraceStep(item.m_Lane, item.m_CurvePosition.x,
+                        item.m_CurvePosition.y,
+                        (item.m_Flags & Game.Vehicles.CarLaneFlags.TurnLeft) != 0,
+                        (item.m_Flags & Game.Vehicles.CarLaneFlags.TurnRight) != 0);
                 }
-                var flags = item.m_Flags;
-                bool left = (flags & Game.Vehicles.CarLaneFlags.TurnLeft) != 0;
-                bool right = (flags & Game.Vehicles.CarLaneFlags.TurnRight) != 0;
-                TurnSide side = left == right ? TurnSide.Unknown : left ? TurnSide.Left : TurnSide.Right;
-                steps[i] = new TraceStep(kind, metres, side);
+                if (navigationCenterIndex >= 0)
+                {
+                    result = RouteTracePolicy.Assess(steps, navigationCenterIndex, Handedness.Right, new TwtlOptions());
+                    return true;
+                }
             }
-            // The current prototype is a right-hand-traffic road. Native
-            // navigation does not itself prove a legal destination or gap.
-            return RouteTracePolicy.Assess(steps, centerIndex, Handedness.Right, new TwtlOptions());
+            if (!EntityManager.HasBuffer<PathElement>(vehicle) ||
+                !EntityManager.HasComponent<PathOwner>(vehicle)) return false;
+            var path = EntityManager.GetBuffer<PathElement>(vehicle, true);
+            int start = Math.Max(0, EntityManager.GetComponentData<PathOwner>(vehicle).m_ElementIndex);
+            if (start >= path.Length) return false;
+            int end = start + Math.Min(32, path.Length - start);
+            var pending = new TraceStep[end - start];
+            int centerIndex = -1;
+            for (int i = start; i < end; i++)
+            {
+                var item = path[i];
+                if (centerLanes.Contains(item.m_Target) && centerIndex < 0) centerIndex = i - start;
+                bool left = false, right = false;
+                if (EntityManager.Exists(item.m_Target) &&
+                    EntityManager.HasComponent<Game.Net.CarLane>(item.m_Target))
+                {
+                    var flags = EntityManager.GetComponentData<Game.Net.CarLane>(item.m_Target).m_Flags;
+                    left = (flags & (Game.Net.CarLaneFlags.TurnLeft | Game.Net.CarLaneFlags.GentleTurnLeft)) != 0;
+                    right = (flags & (Game.Net.CarLaneFlags.TurnRight | Game.Net.CarLaneFlags.GentleTurnRight)) != 0;
+                }
+                else if (EntityManager.Exists(item.m_Target) &&
+                    EntityManager.HasComponent<ParkingLane>(item.m_Target))
+                {
+                    var flags = EntityManager.GetComponentData<ParkingLane>(item.m_Target).m_Flags;
+                    left = (flags & ParkingLaneFlags.ParkingLeft) != 0;
+                    right = (flags & ParkingLaneFlags.ParkingRight) != 0;
+                }
+                pending[i - start] = MakeTraceStep(item.m_Target, item.m_TargetDelta.x,
+                    item.m_TargetDelta.y, left, right);
+            }
+            if (centerIndex < 0) return false;
+            result = RouteTracePolicy.Assess(pending, centerIndex, Handedness.Right, new TwtlOptions());
+            return true;
+        }
+
+        private TraceStep MakeTraceStep(Entity lane, float from, float to, bool left, bool right)
+        {
+            TraceLaneKind kind = TraceLaneKind.Unknown;
+            double metres = 0;
+            if (EntityManager.Exists(lane))
+            {
+                if (centerLanes.Contains(lane)) kind = TraceLaneKind.SharedCenter;
+                else if (EntityManager.HasComponent<NodeLane>(lane)) kind = TraceLaneKind.Junction;
+                else if (EntityManager.HasComponent<ConnectionLane>(lane)) kind = TraceLaneKind.RoadsideConnection;
+                else if (EntityManager.HasComponent<ParkingLane>(lane)) kind = TraceLaneKind.Parking;
+                else if (EntityManager.HasComponent<EdgeLane>(lane)) kind = TraceLaneKind.Ordinary;
+                if (EntityManager.HasComponent<Curve>(lane))
+                    metres = EntityManager.GetComponentData<Curve>(lane).m_Length * Math.Abs(to - from);
+            }
+            TurnSide side = left == right ? TurnSide.Unknown : left ? TurnSide.Left : TurnSide.Right;
+            return new TraceStep(kind, metres, side);
         }
 
         private void Finish(string reason)
         {
             if (!running) return;
             running = false;
-            Mod.Log.Info($"[TRAFFIC-MONITOR] Finished reason={reason} owner={owner} samples={samples} ordinaryCarFrames={ordinaryCarFrames} centerCarFrames={centerCarFrames} uniqueOrdinaryCars={seenOrdinaryCars.Count} uniqueCenterCars={seenCenterCars.Count} centerEntries={centerEntries} opposingSamples={opposingSamples} centerStillObserved={centerVisits.Count} routeShapes={string.Join(",", routeShapes)}; no turn-only or conflict-safety claim.");
+            Mod.Log.Info($"[TRAFFIC-MONITOR] Finished reason={reason} owner={owner} samples={samples} ordinaryCarFrames={ordinaryCarFrames} centerCarFrames={centerCarFrames} uniqueOrdinaryCars={seenOrdinaryCars.Count} uniqueCenterCars={seenCenterCars.Count} plannedCenterCars={plannedCenterCars.Count} plannedRouteShapes={string.Join(",", plannedRouteShapes)} centerEntries={centerEntries} opposingSamples={opposingSamples} centerStillObserved={centerVisits.Count} routeShapes={string.Join(",", routeShapes)}; no turn-only or conflict-safety claim.");
         }
     }
 }
