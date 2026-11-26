@@ -93,33 +93,54 @@ namespace Twtl.Mod.RoadBuilderIntegration
                 unresolvedCenter = false;
                 int closed = 0;
                 int gatedJunctions = 0;
+                int uncertainPrototypesClosed = 0;
                 var visitedNodeLanes = new HashSet<Entity>();
                 for (int i = 0; i < lanes.Length; i++)
                 {
                     Entity lane = lanes[i];
                     if (IsDrivablePrototypeCenter(lane))
                     {
-                        gatedJunctions += GateJunctionConnections(lane, visitedNodeLanes);
+                        var gate = GateJunctionConnections(lane, visitedNodeLanes);
+                        gatedJunctions += gate.Closed;
+                        if (!gate.StartMatched || !gate.EndMatched)
+                        {
+                            if (CloseLane(lane)) uncertainPrototypesClosed++;
+                            Mod.Log.Warn($"[SAFETY] V3 center {lane} lacks a confirmed junction connector at one or both ends; center path closed instead of assuming safe routing.");
+                        }
                         continue;
                     }
                     if (!IsExperimentalCenter(lane)) continue;
-                    var car = EntityManager.GetComponentData<Game.Net.CarLane>(lane);
-                    if (car.m_BlockageStart == 0 && car.m_BlockageEnd == byte.MaxValue) continue;
-                    car.m_BlockageStart = 0;
-                    car.m_BlockageEnd = byte.MaxValue;
-                    EntityManager.SetComponentData(lane, car);
-                    if (!EntityManager.HasComponent<Created>(lane) &&
-                        !EntityManager.HasComponent<Updated>(lane) &&
-                        !EntityManager.HasComponent<PathfindUpdated>(lane))
-                        EntityManager.AddComponent<PathfindUpdated>(lane);
-                    closed++;
+                    if (CloseLane(lane)) closed++;
                 }
                 if (closed != 0)
                     Mod.Log.Warn($"[SAFETY] Closed {closed} experimental center lanes to native pathfinding; ordinary lanes remain open. This is not a functional turn lane.");
                 if (gatedJunctions != 0)
                     Mod.Log.Warn($"[SAFETY] Closed {gatedJunctions} V3 center-to-junction connector lanes. Ordinary lanes remain open; roadside turn access and conflict safety are unverified.");
+                if (uncertainPrototypesClosed != 0)
+                    Mod.Log.Warn($"[SAFETY] Closed {uncertainPrototypesClosed} V3 center lanes because the junction gate could not establish both endpoints.");
                 fullScanPending = unresolvedCenter;
             }
+        }
+
+        private bool CloseLane(Entity lane)
+        {
+            var car = EntityManager.GetComponentData<Game.Net.CarLane>(lane);
+            if (car.m_BlockageStart == 0 && car.m_BlockageEnd == byte.MaxValue) return false;
+            car.m_BlockageStart = 0;
+            car.m_BlockageEnd = byte.MaxValue;
+            EntityManager.SetComponentData(lane, car);
+            if (!EntityManager.HasComponent<Created>(lane) &&
+                !EntityManager.HasComponent<Updated>(lane) &&
+                !EntityManager.HasComponent<PathfindUpdated>(lane))
+                EntityManager.AddComponent<PathfindUpdated>(lane);
+            return true;
+        }
+
+        private struct JunctionGateResult
+        {
+            public int Closed;
+            public bool StartMatched;
+            public bool EndMatched;
         }
 
         private bool IsDrivablePrototypeCenter(Entity lane)
@@ -144,52 +165,47 @@ namespace Twtl.Mod.RoadBuilderIntegration
             return drivable;
         }
 
-        private int GateJunctionConnections(Entity centerEntity, HashSet<Entity> visited)
+        private JunctionGateResult GateJunctionConnections(Entity centerEntity, HashSet<Entity> visited)
         {
+            var result = new JunctionGateResult();
             Entity owner = EntityManager.GetComponentData<Owner>(centerEntity).m_Owner;
             if (!EntityManager.HasComponent<Game.Net.Edge>(owner) ||
-                !EntityManager.HasComponent<Lane>(centerEntity)) return 0;
+                !EntityManager.HasComponent<Lane>(centerEntity)) return result;
             var edge = EntityManager.GetComponentData<Game.Net.Edge>(owner);
             var center = EntityManager.GetComponentData<Lane>(centerEntity);
-            int closed = GateNode(edge.m_Start, center, visited);
-            if (edge.m_End != edge.m_Start) closed += GateNode(edge.m_End, center, visited);
-            return closed;
+            GateNode(edge.m_Start, center, visited, ref result);
+            if (edge.m_End != edge.m_Start) GateNode(edge.m_End, center, visited, ref result);
+            return result;
         }
 
-        private int GateNode(Entity node, Lane center, HashSet<Entity> visited)
+        private void GateNode(Entity node, Lane center, HashSet<Entity> visited, ref JunctionGateResult result)
         {
-            if (!EntityManager.Exists(node) || !EntityManager.HasBuffer<Game.Net.SubLane>(node)) return 0;
-            int closed = 0;
+            if (!EntityManager.Exists(node) || !EntityManager.HasBuffer<Game.Net.SubLane>(node)) return;
             var subLanes = EntityManager.GetBuffer<Game.Net.SubLane>(node, true);
             for (int i = 0; i < subLanes.Length; i++)
             {
                 Entity connector = subLanes[i].m_SubLane;
-                if (visited.Contains(connector) || !EntityManager.Exists(connector) ||
+                if (!EntityManager.Exists(connector) ||
                     !EntityManager.HasComponent<NodeLane>(connector) ||
                     !EntityManager.HasComponent<Lane>(connector) ||
                     !EntityManager.HasComponent<Game.Net.CarLane>(connector) ||
                     EntityManager.HasComponent<Deleted>(connector) ||
                     EntityManager.HasComponent<Game.Tools.Temp>(connector)) continue;
                 var path = EntityManager.GetComponentData<Lane>(connector);
-                bool touchesCenter = path.m_StartNode.Equals(center.m_StartNode) ||
-                    path.m_EndNode.Equals(center.m_StartNode) ||
-                    path.m_StartNode.Equals(center.m_EndNode) ||
+                bool startMatch = path.m_StartNode.Equals(center.m_StartNode) ||
+                    path.m_EndNode.Equals(center.m_StartNode);
+                bool endMatch = path.m_StartNode.Equals(center.m_EndNode) ||
                     path.m_EndNode.Equals(center.m_EndNode);
-                if (!touchesCenter) continue;
-                visited.Add(connector);
-                var car = EntityManager.GetComponentData<Game.Net.CarLane>(connector);
-                if (car.m_BlockageStart == 0 && car.m_BlockageEnd == byte.MaxValue) continue;
-                car.m_BlockageStart = 0;
-                car.m_BlockageEnd = byte.MaxValue;
-                EntityManager.SetComponentData(connector, car);
-                if (!EntityManager.HasComponent<Created>(connector) &&
-                    !EntityManager.HasComponent<Updated>(connector) &&
-                    !EntityManager.HasComponent<PathfindUpdated>(connector))
-                    EntityManager.AddComponent<PathfindUpdated>(connector);
-                closed++;
-                Mod.Log.Info($"[JUNCTION-GATE] node={node} connector={connector}; native full blockage at a V3 center endpoint.");
+                if (!startMatch && !endMatch) continue;
+                result.StartMatched |= startMatch;
+                result.EndMatched |= endMatch;
+                if (!visited.Add(connector)) continue;
+                if (CloseLane(connector))
+                {
+                    result.Closed++;
+                    Mod.Log.Info($"[JUNCTION-GATE] node={node} connector={connector}; native full blockage at a V3 center endpoint.");
+                }
             }
-            return closed;
         }
 
         private bool IsExperimentalCenter(Entity lane)
