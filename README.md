@@ -1,37 +1,19 @@
 # Two-Way Turn Lane (TWTL)
 
-An experimental Road Builder add-on for Cities: Skylines II. The goal is one physical centre turn corridor usable from either traffic direction, including asymmetric road layouts and left-hand traffic.
+A Cities: Skylines II Road Builder add-on under active development. The goal is a single physical center lane that drivers from either direction use for legal left turns.
 
-**This is a research implementation, not a functional traffic mod.** Shared-lane driving is unavailable. The opt-in Road Builder entry is explicitly named **TWTL Research Corridor CLOSED 3m** and contains no drivable lanes. It demonstrates external lane discovery without exposing traffic to unverified opposing-lane collision behaviour. Do not use it in an important city.
+## Current build
 
-## Implemented
+The mod registers a selectable Road Builder center section and a five-lane road. Their existing prefab names and road ID are retained so the Bonham test save can still resolve them. Its center has an independent two-way path edge. The center-to-junction connectors are blocked where their identity can be verified. The old middle blockage is removed only when it matches the interval this mod installed, and the center has a 5 m/s speed limit.
 
-- A game-independent C# library for physical cross-section eligibility, turn-intent admission, bounded intended distance and safe recovery decisions.
-- Conservative spatial reservations with vehicle length and braking clearance, deterministic batch priority, separate simultaneous opposing movements, invalidation and cleanup.
-- Predictive merge-gap advice with bounded acceleration/deceleration, trajectory checks and gap preference hysteresis. Advice never authorizes a game lane change.
-- Intersection transition planning with a closed fallback for short segments and prohibited turns.
-- An external Road Builder research section, a one-shot selected-road geometry/overlap/occupancy inspector, and a reflection-based game API signature audit.
-- Thirty-six executable core tests, including reverse-curve geometry regressions, without game DLLs or fabricated API stubs.
-- Native reverse-curve/reciprocal-overlap diagnostics, upcoming route-buffer capture and native blocker observations.
+A new game-side controller checks a car's planned center-lane route before entry. It admits only a visible, short left turn to a building road connection, gives one car at a time an exclusive claim on that physical center edge, and caps the speed of other cars approaching it through the native `CarNavigation` command. It releases a claim after the car leaves the lane or its route disappears. This is the first active driving implementation; **it has not yet passed a live traffic test**. Use only the disposable Bonham test city until legal turns, braking, load behavior, and conflicts are observed in game.
 
-## Build and verify
+The old diagnostic checkboxes, isolated research roads, one-shot probes, and traffic sampler have been removed. The `TWTL_DRIVABLE_FIVE_LANE_SIDEWALK_TEST_ROAD_V3` ID stays for save compatibility; newly registered roads are named **TWTL Five Lane Road**. Existing saved Road Builder configurations retain their old display name.
 
-With .NET SDK 8 installed:
+## Build
 
-```sh
-dotnet build tests/Twtl.Core.Tests/Twtl.Core.Tests.csproj -c Release
-dotnet run --project tests/Twtl.Core.Tests -c Release --no-build
-dotnet run --project tests/Twtl.Core.Tests -c Release --no-build -- --experiment
-```
+Run `scripts/Build-Local.ps1` on the Windows machine with the official CS2 modding toolchain, installed game, and Road Builder. The current adapter compiled and completed the official Unity IL and Burst processing with zero warnings/errors against the installed CS2 1.6.4f1 and Road Builder 0.8.0.0 assemblies. This verifies assembly compatibility, not traffic behavior.
 
-This is an executable test harness: `dotnet test` does not run these tests. The process exits nonzero on any failure. The experiment is explicitly an offline model; it does not construct game lanes.
+The [original specification](docs/ORIGINAL_SPECIFICATION.md) remains the requirements. The [known limitations](docs/KNOWN_LIMITATIONS.md) record the remaining work. The older [implementation report](docs/IMPLEMENTATION_REPORT.md) and [local verification](docs/LOCAL_VERIFICATION.md) preserve research history, including options and probes removed from the current build.
 
-The actual mod requires Windows, a licensed game installation, its official modding toolchain, and Road Builder. The adapter now **compiles and completes official postprocessing against the owner's installed 1.6.4f1 assemblies and Road Builder 0.8.0.0**, with 0 warnings and 0 errors. This does not establish working turn-lane traffic. See [local build](docs/LOCAL_BUILD.md) and [installed verification](docs/LOCAL_VERIFICATION.md) for dependency identities and the runtime boundary.
-
-## Development status
-
-Milestone 1 has a verified real game build and live closed-section discovery, picker, placement, placed-owner lane capture and same-process local save/load in a clean Road Builder playset; the automatic configuration hook and lifecycle gates remain open. Milestone 2 has native inspection tools and a test protocol; the opposing logical-lane experiment has not been executed. Later milestones have isolated calculation prototypes, with no traffic actuation. [The original specification](docs/ORIGINAL_SPECIFICATION.md) is the requirements; the installed 1.6.4f1 APIs supersede its initial 1.6.2f1 research target.
-
-Read the [implementation report](docs/IMPLEMENTATION_REPORT.md), [architecture](docs/ARCHITECTURE.md), [API evidence](docs/GAME_API_COMPATIBILITY.md), [research](docs/RESEARCH.md), [Road Builder integration](docs/ROAD_BUILDER_INTEGRATION.md), [test plan](docs/TEST_PLAN.md) and [limitations](docs/KNOWN_LIMITATIONS.md) before continuing development.
-
-The existing [MIT licence](LICENSE), copyright Ryan Gordon, is preserved. No game binaries, decompiled game source, Paradox release or production readiness claims are included.
+Game binaries and local builds are excluded from GitHub. The existing [MIT licence](LICENSE) is retained.

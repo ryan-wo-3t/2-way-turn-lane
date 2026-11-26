@@ -11,14 +11,13 @@ using UnityEngine;
 namespace Twtl.Mod.RoadBuilderIntegration
 {
     /// <summary>
-    /// A zero-width, non-road lane breaks composition grouping without a
-    /// carriageway barrier. The separate opt-in road uses this same section
-    /// for a disposable-city vehicle trial; it has no traffic safety policy.
+    /// Registers the shared Road Builder lane. The zero-width, non-road lane
+    /// prevents the game from merging its bidirectional path edge into an
+    /// adjacent one-way master lane. Legacy names/IDs keep Bonham loadable.
     /// </summary>
-    public partial class VirtualLaneGraphFixtureSystem : GameSystemBase
+    public partial class TurnLanePrefabSystem : GameSystemBase
     {
         public const string PrefabName = "TWTL VIRTUAL-LANE GRAPH TEST 3m";
-        public const string RoadId = "TWTL_VIRTUAL_LANE_GRAPH_TEST_ROAD_V1";
         public const string DrivableRoadId = "TWTL_DRIVABLE_FIVE_LANE_SIDEWALK_TEST_ROAD_V3";
         private const string NativeSectionName = "Invisible Car Twoway Section 3";
         private const string NativeLaneName = "Invisible Car Twoway Lane 3";
@@ -29,13 +28,12 @@ namespace Twtl.Mod.RoadBuilderIntegration
         private const RoadAddons RequiredAddons = RoadAddons.HasUndergroundWaterPipes |
             RoadAddons.HasUndergroundElectricityCable | RoadAddons.GeneratesZoningBlocks;
         private bool registered;
-        private bool roadAttempted;
         private bool drivableRoadAttempted;
         private bool failed;
 
         protected override void OnUpdate()
         {
-            if (failed || Mod.Options?.ShowVirtualLaneGraphFixture != true) return;
+            if (failed) return;
             var catalogue = World.GetExistingSystemManaged<RoadBuilderGenerationDataSystem>();
             if (registered)
             {
@@ -44,15 +42,10 @@ namespace Twtl.Mod.RoadBuilderIntegration
                     catalogue.NetSections.ContainsKey(SideLaneName) &&
                     catalogue.NetSections.ContainsKey(SidewalkSectionName))
                 {
-                    if (!roadAttempted)
-                    {
-                        roadAttempted = true;
-                        RegisterTestRoad(RoadId, "TWTL VIRTUAL-LANE GRAPH TEST - DISCONNECTED ONLY");
-                    }
-                    if (!drivableRoadAttempted && Mod.Options?.EnableDrivablePrototype == true)
+                    if (!drivableRoadAttempted)
                     {
                         drivableRoadAttempted = true;
-                        RegisterTestRoad(DrivableRoadId, "TWTL FIVE-LANE SIDEWALK PROTOTYPE - TEST CITY ONLY");
+                        RegisterRoad();
                     }
                 }
                 return;
@@ -88,7 +81,7 @@ namespace Twtl.Mod.RoadBuilderIntegration
                 // component. Installed NetInitializeSystem gives this lane no
                 // Road flag or drivable path edge.
                 if (!prefabSystem.AddPrefab(virtualLane))
-                    throw new InvalidOperationException("PrefabSystem rejected virtual test lane.");
+                    throw new InvalidOperationException("PrefabSystem rejected shared-lane separator.");
 
                 var virtualPiece = ScriptableObject.CreateInstance<NetPiecePrefab>();
                 virtualPiece.name = VirtualPieceName;
@@ -98,7 +91,7 @@ namespace Twtl.Mod.RoadBuilderIntegration
                     new NetLaneInfo { m_Lane = virtualLane }
                 };
                 if (!prefabSystem.AddPrefab(virtualPiece))
-                    throw new InvalidOperationException("PrefabSystem rejected virtual test piece.");
+                    throw new InvalidOperationException("PrefabSystem rejected shared-lane separator piece.");
 
                 var section = ScriptableObject.CreateInstance<NetSectionPrefab>();
                 section.name = PrefabName;
@@ -120,26 +113,26 @@ namespace Twtl.Mod.RoadBuilderIntegration
                 if (!prefabSystem.AddPrefab(section))
                     throw new InvalidOperationException("PrefabSystem rejected virtual-lane graph section.");
                 registered = true;
-                Mod.Log.Warn("[VIRTUAL LANE GRAPH TEST] Registered zero-width non-road separator section. Disconnected graph inspection only; lateral access and safety unknown.");
+                Mod.Log.Info("Registered Road Builder shared center section with an independent two-way graph lane.");
             }
             catch (Exception error)
             {
                 failed = true;
-                Mod.Log.Error(error, "Virtual-lane graph fixture registration refused.");
+                Mod.Log.Error(error, "Shared turn-lane section registration refused.");
             }
         }
 
-        private void RegisterTestRoad(string roadId, string roadName)
+        private void RegisterRoad()
         {
             try
             {
                 var builder = World.GetExistingSystemManaged<RoadBuilderSystem>();
                 if (builder == null) throw new InvalidOperationException("Road Builder road system is unavailable.");
-                if (builder.Configurations.TryGetValue(roadId, out var existing))
+                if (builder.Configurations.TryGetValue(DrivableRoadId, out var existing))
                 {
                     var existingAddons = existing.Config?.Addons ?? 0;
                     if ((existingAddons & RequiredAddons) != RequiredAddons)
-                        Mod.Log.Warn("[VIRTUAL LANE GRAPH TEST] Existing saved helper road lacks utility/zoning addons; leaving the saved configuration untouched.");
+                        Mod.Log.Warn("Existing saved turn-lane road lacks utility/zoning addons; leaving its configuration untouched.");
                     return;
                 }
                 var generation = World.GetExistingSystemManaged<RoadBuilderGenerationDataSystem>()?.RoadGenerationData;
@@ -158,24 +151,18 @@ namespace Twtl.Mod.RoadBuilderIntegration
                         throw new InvalidOperationException("Road Builder utility section missing: " + name);
                 var roadLanes = new List<LaneConfig>
                 {
+                    new LaneConfig { SectionPrefabName = SidewalkSectionName, Invert = true },
+                    new LaneConfig { SectionPrefabName = SideLaneName, Invert = true },
                     new LaneConfig { SectionPrefabName = SideLaneName, Invert = true },
                     new LaneConfig { SectionPrefabName = PrefabName },
-                    new LaneConfig { SectionPrefabName = SideLaneName }
+                    new LaneConfig { SectionPrefabName = SideLaneName },
+                    new LaneConfig { SectionPrefabName = SideLaneName },
+                    new LaneConfig { SectionPrefabName = SidewalkSectionName }
                 };
-                if (roadId == DrivableRoadId)
-                {
-                    // Preserve four ordinary lanes and a walkable edge on both
-                    // sides. The 15 m version stranded buildings on Bonham's
-                    // Lake Street; this version is 27 m with 6 m sidewalks.
-                    roadLanes.Insert(0, new LaneConfig { SectionPrefabName = SideLaneName, Invert = true });
-                    roadLanes.Add(new LaneConfig { SectionPrefabName = SideLaneName });
-                    roadLanes.Insert(0, new LaneConfig { SectionPrefabName = SidewalkSectionName, Invert = true });
-                    roadLanes.Add(new LaneConfig { SectionPrefabName = SidewalkSectionName });
-                }
                 var config = new RoadConfig
                 {
-                    ID = roadId,
-                    Name = roadName,
+                    ID = DrivableRoadId,
+                    Name = "TWTL Five Lane Road",
                     Version = RoadBuilderSerializeSystem.CURRENT_VERSION,
                     Category = RoadCategory.Road,
                     Addons = RequiredAddons,
@@ -185,14 +172,11 @@ namespace Twtl.Mod.RoadBuilderIntegration
                 };
                 if (builder.AddPrefab(config) == null)
                     throw new InvalidOperationException("Road Builder rejected virtual-lane graph road.");
-                if (roadId == DrivableRoadId)
-                    Mod.Log.Warn("[DRIVABLE PROTOTYPE] Registered opt-in 27 m five-lane road with outer sidewalks for disposable-city car trials. Center lane has no turn-only routing, opposing conflict control or safety guarantee. Do not use in valued saves.");
-                else
-                    Mod.Log.Warn("[VIRTUAL LANE GRAPH TEST] Registered disconnected-only road with Road Builder utility and zoning addons. Native utility continuity is not live-verified; no car trial or traffic safeguards.");
+                Mod.Log.Info("Registered Road Builder five-lane road; saved V3 road ID retained.");
             }
             catch (Exception error)
             {
-                Mod.Log.Error(error, "Virtual-lane graph test road registration failed.");
+                Mod.Log.Error(error, "Turn-lane road registration failed.");
             }
         }
     }

@@ -16,11 +16,11 @@ using Unity.Entities;
 namespace Twtl.Mod.RoadBuilderIntegration
 {
     /// <summary>
-    /// Closes the path graph on this add-on's unsafe experimental center lanes.
-    /// The native pathfinder treats a complete blockage as a hard denial. Run
-    /// after vanilla recalculates lane data and before it updates graph edges.
+    /// Keeps retired research lanes closed and prepares the saved five-lane
+    /// road for route-specific control. Run after vanilla lane data refresh
+    /// and before native path graph updates.
     /// </summary>
-    public partial class ExperimentalLaneClosureSystem : GameSystemBase
+    public partial class TurnLanePathSystem : GameSystemBase
     {
         private const string NativeCenterLane = "Invisible Car Twoway Lane 3";
         private EntityQuery allLanes;
@@ -29,7 +29,6 @@ namespace Twtl.Mod.RoadBuilderIntegration
         private Entity lastCity;
         private bool fullScanPending = true;
         private bool unresolvedCenter;
-        private bool lastPrototypeEnabled;
         private readonly Dictionary<Entity, bool> unsafeRoadPrefabs = new Dictionary<Entity, bool>();
         private readonly Dictionary<Entity, bool> drivableRoadPrefabs = new Dictionary<Entity, bool>();
 
@@ -70,19 +69,11 @@ namespace Twtl.Mod.RoadBuilderIntegration
                 unsafeRoadPrefabs.Clear();
                 drivableRoadPrefabs.Clear();
             }
-            bool prototypeEnabled = Mod.Options?.EnableDrivablePrototype == true;
-            if (prototypeEnabled != lastPrototypeEnabled)
-            {
-                lastPrototypeEnabled = prototypeEnabled;
-                fullScanPending = true;
-                unsafeRoadPrefabs.Clear();
-                drivableRoadPrefabs.Clear();
-            }
             if (World.GetExistingSystemManaged<PrefabSystem>() == null) return;
             // A road edit can regenerate its junction connectors without also
             // marking the center edge lane as changed. Re-evaluate center
-            // endpoints whenever new node lanes appear in the opt-in trial.
-            bool junctionChanged = prototypeEnabled && !changedJunctionLanes.IsEmptyIgnoreFilter;
+            // endpoints whenever new node lanes appear.
+            bool junctionChanged = !changedJunctionLanes.IsEmptyIgnoreFilter;
             if (!fullScanPending && changedLanes.IsEmptyIgnoreFilter && !junctionChanged) return;
 
             EntityQuery query = fullScanPending || junctionChanged ? allLanes : changedLanes;
@@ -110,16 +101,7 @@ namespace Twtl.Mod.RoadBuilderIntegration
                         }
                         else
                         {
-                            if (AddForbiddenRouteCost(lane))
-                                Mod.Log.Info($"[JUNCTION-GATE] V3 center={lane} uses the native Forbidden route cost; this is a preference, not a turn-only prohibition.");
-                            if (ApplyTransitCut(lane))
-                            {
-                                var cut = EntityManager.GetComponentData<Game.Net.CarLane>(lane);
-                                if (cut.m_BlockageStart == 0 && cut.m_BlockageEnd == byte.MaxValue)
-                                    Mod.Log.Warn($"[TRANSIT-CUT] V3 center={lane} closed completely because a safe middle span could not be applied.");
-                                else
-                                    Mod.Log.Warn($"[TRANSIT-CUT] V3 center={lane} middle blockage={cut.m_BlockageStart}..{cut.m_BlockageEnd}; full-length graph traversal should be denied, but short lateral use is not turn-authorized.");
-                            }
+                            PrepareControlledLane(lane);
                         }
                         continue;
                     }
@@ -150,43 +132,45 @@ namespace Twtl.Mod.RoadBuilderIntegration
             return true;
         }
 
-        private bool AddForbiddenRouteCost(Entity lane)
+        private void PrepareControlledLane(Entity lane)
         {
             var car = EntityManager.GetComponentData<Game.Net.CarLane>(lane);
-            if ((car.m_Flags & CarLaneFlags.Forbidden) != 0) return false;
-            car.m_Flags |= CarLaneFlags.Forbidden;
+            bool changed = false;
+            if ((car.m_Flags & CarLaneFlags.Forbidden) != 0)
+            {
+                car.m_Flags &= ~CarLaneFlags.Forbidden;
+                changed = true;
+            }
+            if (car.m_SpeedLimit > 5f)
+            {
+                car.m_SpeedLimit = 5f;
+                changed = true;
+            }
+            // Clear only the exact middle blockage applied by our previous
+            // prototype. Leave game-created or unknown blockages intact.
+            if (EntityManager.HasComponent<Curve>(lane))
+            {
+                double length = EntityManager.GetComponentData<Curve>(lane).m_Length;
+                if (length > 0)
+                {
+                    Interval middle = TransitCut.Plan(length, new TwtlOptions());
+                    byte start = (byte)Math.Floor(255d * middle.Min / length);
+                    byte end = (byte)Math.Ceiling(255d * middle.Max / length);
+                    if (car.m_BlockageStart == start && car.m_BlockageEnd == end)
+                    {
+                        car.m_BlockageStart = byte.MaxValue;
+                        car.m_BlockageEnd = 0;
+                        changed = true;
+                    }
+                }
+            }
+            if (!changed) return;
             EntityManager.SetComponentData(lane, car);
             if (!EntityManager.HasComponent<Created>(lane) &&
                 !EntityManager.HasComponent<Updated>(lane) &&
                 !EntityManager.HasComponent<PathfindUpdated>(lane))
                 EntityManager.AddComponent<PathfindUpdated>(lane);
-            return true;
-        }
-
-        private bool ApplyTransitCut(Entity lane)
-        {
-            if (!EntityManager.HasComponent<Curve>(lane) ||
-                EntityManager.GetComponentData<Curve>(lane).m_Length <= 0)
-                return CloseLane(lane);
-            var car = EntityManager.GetComponentData<Game.Net.CarLane>(lane);
-            var length = EntityManager.GetComponentData<Curve>(lane).m_Length;
-            Interval middle = TransitCut.Plan(length, new TwtlOptions());
-            byte start = (byte)Math.Floor(255d * middle.Min / length);
-            byte end = (byte)Math.Ceiling(255d * middle.Max / length);
-            if (start == 0 || end == byte.MaxValue) return CloseLane(lane);
-            if (car.m_BlockageStart == start && car.m_BlockageEnd == end) return false;
-            // The native component can represent only one blocked interval.
-            // Preserve any unrelated live blockage by closing the entire
-            // experimental center rather than overwriting that restriction.
-            if (car.m_BlockageEnd >= car.m_BlockageStart) return CloseLane(lane);
-            car.m_BlockageStart = start;
-            car.m_BlockageEnd = end;
-            EntityManager.SetComponentData(lane, car);
-            if (!EntityManager.HasComponent<Created>(lane) &&
-                !EntityManager.HasComponent<Updated>(lane) &&
-                !EntityManager.HasComponent<PathfindUpdated>(lane))
-                EntityManager.AddComponent<PathfindUpdated>(lane);
-            return true;
+            Mod.Log.Info($"[TURN-LANE] Prepared center {lane} for controlled entry; native speed limit={car.m_SpeedLimit}, blockage={car.m_BlockageStart}..{car.m_BlockageEnd}.");
         }
 
         private struct JunctionGateResult
@@ -196,13 +180,14 @@ namespace Twtl.Mod.RoadBuilderIntegration
             public bool EndMatched;
         }
 
-        private bool IsDrivablePrototypeCenter(Entity lane)
+        internal bool IsDrivablePrototypeCenter(Entity lane)
         {
-            if (Mod.Options?.EnableDrivablePrototype != true) return false;
             var car = EntityManager.GetComponentData<Game.Net.CarLane>(lane);
             if ((car.m_Flags & CarLaneFlags.Twoway) == 0 ||
-                !EntityManager.HasComponent<PrefabRef>(lane)) return false;
+                !EntityManager.HasComponent<PrefabRef>(lane) ||
+                !EntityManager.HasComponent<Owner>(lane)) return false;
             var prefabSystem = World.GetExistingSystemManaged<PrefabSystem>();
+            if (prefabSystem == null) return false;
             var laneRef = EntityManager.GetComponentData<PrefabRef>(lane);
             if (!prefabSystem.TryGetSpecificPrefab<NetLanePrefab>(laneRef, out var lanePrefab) ||
                 lanePrefab.name != NativeCenterLane) return false;
@@ -213,8 +198,8 @@ namespace Twtl.Mod.RoadBuilderIntegration
             var roadRef = new PrefabRef(roadPrefabEntity);
             drivable = prefabSystem.TryGetSpecificPrefab<NetGeometryPrefab>(roadRef, out var road) &&
                 road is INetworkBuilderPrefab built &&
-                built.Config?.ID == VirtualLaneGraphFixtureSystem.DrivableRoadId;
-            drivableRoadPrefabs[roadPrefabEntity] = drivable;
+                built.Config?.ID == TurnLanePrefabSystem.DrivableRoadId;
+            if (drivable) drivableRoadPrefabs[roadPrefabEntity] = true;
             return drivable;
         }
 
@@ -300,17 +285,16 @@ namespace Twtl.Mod.RoadBuilderIntegration
         {
             // The separate, explicitly opted-in disposable-city road is the
             // only experiment allowed past the hard pathfinder closure.
-            if (built.Config?.ID == VirtualLaneGraphFixtureSystem.DrivableRoadId &&
-                Mod.Options?.EnableDrivablePrototype == true) return false;
+            if (built.Config?.ID == TurnLanePrefabSystem.DrivableRoadId) return false;
             var lanes = built.Config?.Lanes;
             if (lanes == null) return false;
             foreach (var lane in lanes)
             {
                 string section = lane.SectionPrefabName ?? "";
-                if (section == NativeFixtureSystem.PrefabName ||
-                    section == MedianGraphFixtureSystem.PrefabName ||
-                    section == SeparatorGraphFixtureSystem.PrefabName ||
-                    section == VirtualLaneGraphFixtureSystem.PrefabName) return true;
+                if (section == "TWTL NATIVE TWO-WAY UNSAFE TEST 3m" ||
+                    section == "TWTL MEDIAN GRAPH TEST 3m" ||
+                    section == "TWTL SEPARATOR GRAPH TEST 3m" ||
+                    section == TurnLanePrefabSystem.PrefabName) return true;
             }
             return false;
         }
