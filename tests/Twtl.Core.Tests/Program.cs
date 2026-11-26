@@ -348,6 +348,17 @@ internal static class Program
                 new TraceStep(TraceLaneKind.RoadsideConnection, 3, TurnSide.Left) },
                 0, Handedness.Right, Options) == TraceResult.TooLong);
         });
+        Test("transit cut blocks full center traversal and bounds both end approaches", () =>
+        {
+            foreach (double length in new[] { 9d, 27d, 104d, 500d })
+            {
+                var cut = TransitCut.Plan(length, Options);
+                Assert(cut.Min > 0 && cut.Max < length && cut.Max > cut.Min);
+                Assert(cut.Min <= Options.IntendedDistance && length - cut.Max <= Options.IntendedDistance);
+                Assert(Math.Abs(cut.Min - (length - cut.Max)) < 0.00001);
+            }
+            Throws<ArgumentOutOfRangeException>(() => TransitCut.Plan(0, Options));
+        });
         Console.WriteLine($"RESULT {passed} passed, {failed} failed");
         return failed == 0 ? 0 : 1;
     }

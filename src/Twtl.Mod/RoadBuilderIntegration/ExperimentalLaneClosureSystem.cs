@@ -9,6 +9,7 @@ using Game.Prefabs;
 using Game.Simulation;
 using RoadBuilder.Domain.Prefabs;
 using RoadBuilder.Utilities;
+using Twtl.Core;
 using Unity.Collections;
 using Unity.Entities;
 
@@ -107,8 +108,19 @@ namespace Twtl.Mod.RoadBuilderIntegration
                             if (CloseLane(lane)) uncertainPrototypesClosed++;
                             Mod.Log.Warn($"[SAFETY] V3 center {lane} lacks a confirmed junction connector at one or both ends; center path closed instead of assuming safe routing.");
                         }
-                        else if (AddForbiddenRouteCost(lane))
-                            Mod.Log.Info($"[JUNCTION-GATE] V3 center={lane} uses the native Forbidden route cost; this is a preference, not a turn-only prohibition.");
+                        else
+                        {
+                            if (AddForbiddenRouteCost(lane))
+                                Mod.Log.Info($"[JUNCTION-GATE] V3 center={lane} uses the native Forbidden route cost; this is a preference, not a turn-only prohibition.");
+                            if (ApplyTransitCut(lane))
+                            {
+                                var cut = EntityManager.GetComponentData<Game.Net.CarLane>(lane);
+                                if (cut.m_BlockageStart == 0 && cut.m_BlockageEnd == byte.MaxValue)
+                                    Mod.Log.Warn($"[TRANSIT-CUT] V3 center={lane} closed completely because a safe middle span could not be applied.");
+                                else
+                                    Mod.Log.Warn($"[TRANSIT-CUT] V3 center={lane} middle blockage={cut.m_BlockageStart}..{cut.m_BlockageEnd}; full-length graph traversal should be denied, but short lateral use is not turn-authorized.");
+                            }
+                        }
                         continue;
                     }
                     if (!IsExperimentalCenter(lane)) continue;
@@ -143,6 +155,32 @@ namespace Twtl.Mod.RoadBuilderIntegration
             var car = EntityManager.GetComponentData<Game.Net.CarLane>(lane);
             if ((car.m_Flags & CarLaneFlags.Forbidden) != 0) return false;
             car.m_Flags |= CarLaneFlags.Forbidden;
+            EntityManager.SetComponentData(lane, car);
+            if (!EntityManager.HasComponent<Created>(lane) &&
+                !EntityManager.HasComponent<Updated>(lane) &&
+                !EntityManager.HasComponent<PathfindUpdated>(lane))
+                EntityManager.AddComponent<PathfindUpdated>(lane);
+            return true;
+        }
+
+        private bool ApplyTransitCut(Entity lane)
+        {
+            if (!EntityManager.HasComponent<Curve>(lane) ||
+                EntityManager.GetComponentData<Curve>(lane).m_Length <= 0)
+                return CloseLane(lane);
+            var car = EntityManager.GetComponentData<Game.Net.CarLane>(lane);
+            var length = EntityManager.GetComponentData<Curve>(lane).m_Length;
+            Interval middle = TransitCut.Plan(length, new TwtlOptions());
+            byte start = (byte)Math.Floor(255d * middle.Min / length);
+            byte end = (byte)Math.Ceiling(255d * middle.Max / length);
+            if (start == 0 || end == byte.MaxValue) return CloseLane(lane);
+            if (car.m_BlockageStart == start && car.m_BlockageEnd == end) return false;
+            // The native component can represent only one blocked interval.
+            // Preserve any unrelated live blockage by closing the entire
+            // experimental center rather than overwriting that restriction.
+            if (car.m_BlockageEnd >= car.m_BlockageStart) return CloseLane(lane);
+            car.m_BlockageStart = start;
+            car.m_BlockageEnd = end;
             EntityManager.SetComponentData(lane, car);
             if (!EntityManager.HasComponent<Created>(lane) &&
                 !EntityManager.HasComponent<Updated>(lane) &&

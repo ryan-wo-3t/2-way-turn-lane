@@ -1,5 +1,9 @@
 # Installed 1.6.4f1 verification
 
+## Native center transit cut, 2026-11-25
+
+The disposable V3 experiment now applies a native blockage to the middle of its center edge after the endpoint junction gate. The core plan retains at most 35% of the edge or 45 m at each end, whichever is shorter, and rejects a continuous full-edge traversal. It does not modify ordinary lanes. If the center has an unrelated existing blockage, the adapter closes it fully rather than overwriting that restriction. A changed center receives `PathfindUpdated` before native graph update. The calculation passed 40 core tests; the official mod C# and Unity IL/Burst build against installed CS2 1.6.4f1 and Road Builder 0.8.0.0 passed with zero warnings and errors. No live graph or traffic claim follows until the next disposable-city test. The open end approaches remain unsafe for normal play because route intent and opposing conflicts are uncontrolled.
+
 ## Route trace update, 2026-11-25
 
 After the zero-center-entry Bonham run, the monitor was extended to inspect ordinary cars' native navigation lookahead and pending path elements for a planned center traversal. It counts distinct cars with center plans and summarizes their route shapes, even if actual center entries remain zero. The adapter reads installed 1.6.4f1 `CarNavigationLane`, `PathOwner.m_ElementIndex`, `PathElement`, native car-lane turn flags and parking turn flags. A roadside connection candidate must have the native `Road` flag and a building owner; generic connection lanes do not count. The official C# and Unity IL/Burst build completed with zero warnings and errors. This build remains read-only and awaits a fresh live test; it does not establish or grant a legal turn path.
