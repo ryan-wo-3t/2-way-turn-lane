@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Game;
+using Game.Common;
 using Game.Net;
 using Game.Pathfind;
 using Game.Vehicles;
@@ -284,7 +285,16 @@ namespace Twtl.Mod.Diagnostics
             {
                 if (centerLanes.Contains(lane)) kind = TraceLaneKind.SharedCenter;
                 else if (EntityManager.HasComponent<NodeLane>(lane)) kind = TraceLaneKind.Junction;
-                else if (EntityManager.HasComponent<ConnectionLane>(lane)) kind = TraceLaneKind.RoadsideConnection;
+                else if (EntityManager.HasComponent<ConnectionLane>(lane) &&
+                    EntityManager.HasComponent<Owner>(lane))
+                {
+                    var connection = EntityManager.GetComponentData<ConnectionLane>(lane);
+                    Entity destination = EntityManager.GetComponentData<Owner>(lane).m_Owner;
+                    if ((connection.m_Flags & ConnectionLaneFlags.Road) != 0 &&
+                        EntityManager.Exists(destination) &&
+                        EntityManager.HasComponent<Game.Buildings.Building>(destination))
+                        kind = TraceLaneKind.RoadsideConnection;
+                }
                 else if (EntityManager.HasComponent<ParkingLane>(lane)) kind = TraceLaneKind.Parking;
                 else if (EntityManager.HasComponent<EdgeLane>(lane)) kind = TraceLaneKind.Ordinary;
                 if (EntityManager.HasComponent<Curve>(lane))
